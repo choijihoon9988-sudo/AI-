@@ -301,6 +301,23 @@ body {
     padding: 0.75rem 1.5rem;
     border-top: 1px solid var(--border-color);
     background-color: #fafafa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.prompt-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.rating-stars .fa-star {
+    cursor: pointer;
+    transition: color 0.2s;
 }
 
 .category-tag {
@@ -324,6 +341,7 @@ body {
     grid-column: 1 / -1;
 }
 
+/* ... (이하 스켈레톤, 모달, 반응형 스타일은 이전과 동일) ... */
 .skeleton {
     opacity: 0.7;
     animation: skeleton-loading 1.5s infinite linear;
@@ -346,7 +364,6 @@ body {
 .skeleton-header { height: 20px; width: 60%; margin-bottom: 1rem; border-radius: 4px; }
 .skeleton-content { height: 100px; border-radius: 8px; }
 
-/* --- 모달 공통 스타일 --- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -412,7 +429,6 @@ body {
 
 .modal-footer {
     display: flex;
-    justify-content: flex-end;
     gap: 0.5rem;
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-color);
@@ -421,7 +437,6 @@ body {
     border-bottom-right-radius: 12px;
 }
 
-/* --- 버전 기록 모달 스타일 --- */
 .version-history-modal .modal {
     max-width: 800px;
 }
@@ -448,7 +463,6 @@ body {
     font-size: 0.9rem;
 }
 
-/* --- 길드 관리 모달 스타일 --- */
 .modal-footer {
     justify-content: space-between;
 }
@@ -488,7 +502,6 @@ body {
 }
 
 
-/* --- 반응형 디자인 --- */
 @media (max-width: 768px) {
     .app-container {
         grid-template-columns: 1fr;

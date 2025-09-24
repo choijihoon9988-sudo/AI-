@@ -12,7 +12,7 @@ function escapeHTML(str) {
 
 /**
  * 프롬프트 데이터를 기반으로 HTML 카드 요소를 생성합니다.
- * @param {object} prompt - { id, title, content, category }를 포함하는 프롬프트 객체
+ * @param {object} prompt - 프롬프트 객체
  * @param {string} userRole - 현재 길드에서의 사용자 역할 ('owner', 'editor', 'viewer')
  * @returns {HTMLElement} - 생성된 카드 div 요소
  */
@@ -22,6 +22,13 @@ export function createPromptCard(prompt, userRole = 'owner') {
     card.dataset.id = prompt.id;
 
     const canEdit = userRole === 'owner' || userRole === 'editor';
+    const useCount = prompt.use_count || 0;
+    const avgRating = prompt.avg_rating ? prompt.avg_rating.toFixed(1) : '0.0';
+
+    let starsHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        starsHTML += `<i class="far fa-star rating-star" data-rating="${i}" style="color: ${i <= Math.round(avgRating) ? '#ffc107' : '#e0e0e0'};"></i>`;
+    }
 
     const categoryTag = prompt.category 
         ? `<div class="category-tag">${escapeHTML(prompt.category)}</div>` 
@@ -52,7 +59,14 @@ export function createPromptCard(prompt, userRole = 'owner') {
                 <pre><code>${escapeHTML(prompt.content)}</code></pre>
             </div>
         </div>
-        ${prompt.category ? `<div class="prompt-card-footer">${categoryTag}</div>` : ''}
+        <div class="prompt-card-footer">
+            <div class="prompt-stats">
+                <span><i class="fas fa-copy"></i> ${useCount}</span>
+                <span><i class="fas fa-star"></i> ${avgRating}</span>
+            </div>
+            <div class="rating-stars">${starsHTML}</div>
+            ${categoryTag}
+        </div>
     `;
 
     return card;

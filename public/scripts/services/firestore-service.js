@@ -11,7 +11,9 @@ import {
     runTransaction,
     getDocs,
     orderBy,
-    writeBatch
+    writeBatch,
+    increment,
+    arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { db } from '../firebase-config.js';
 import { getCurrentUser } from '../auth.js';
@@ -35,6 +37,7 @@ export const updateGuildMembers = async (guildId, members, memberIds) => {
     await updateDoc(guildRef, { members, memberIds });
 };
 
+
 export const onPromptsUpdate = (callback) => {
     const user = getCurrentUser();
     if (!user) return () => {};
@@ -52,13 +55,22 @@ export const addPrompt = async (promptData, guildId = null) => {
 
     let collectionRef;
     let data;
+    
+    const baseData = {
+        ...promptData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        use_count: 0,
+        avg_rating: 0,
+        ratings: []
+    };
 
     if (guildId) {
         collectionRef = collection(db, 'guilds', guildId, 'prompts');
-        data = { ...promptData, authorId: user.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+        data = { ...baseData, authorId: user.uid };
     } else {
         collectionRef = collection(db, PROMPTS_COLLECTION);
-        data = { ...promptData, userId: user.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+        data = { ...baseData, userId: user.uid };
     }
     await addDoc(collectionRef, data);
 };
@@ -110,6 +122,51 @@ export const getPromptVersions = async (promptId) => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
+/**
+ * 프롬프트 사용 횟수를 1 증가시킵니다.
+ * @param {string} promptId 
+ * @param {string|null} guildId 
+ */
+export const incrementUseCount = async (promptId, guildId = null) => {
+    let promptDocRef;
+    if (guildId) {
+        promptDocRef = doc(db, GUILDS_COLLECTION, guildId, PROMPTS_COLLECTION, promptId);
+    } else {
+        promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
+    }
+    await updateDoc(promptDocRef, { use_count: increment(1) });
+};
+
+/**
+ * 프롬프트에 별점을 추가하고 평균을 업데이트합니다.
+ * @param {string} promptId 
+ * @param {number} rating 
+ * @param {string|null} guildId 
+ */
+export const ratePrompt = async (promptId, rating, guildId = null) => {
+    let promptDocRef;
+    if (guildId) {
+        promptDocRef = doc(db, GUILDS_COLLECTION, guildId, PROMPTS_COLLECTION, promptId);
+    } else {
+        promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
+    }
+
+    await runTransaction(db, async (transaction) => {
+        const promptDoc = await transaction.get(promptDocRef);
+        if (!promptDoc.exists()) throw "Document does not exist!";
+        
+        const data = promptDoc.data();
+        const newRatings = [...(data.ratings || []), rating];
+        const newAvgRating = newRatings.reduce((a, b) => a + b, 0) / newRatings.length;
+
+        transaction.update(promptDocRef, {
+            ratings: newRatings,
+            avg_rating: newAvgRating
+        });
+    });
+};
+
+
 // --- 길드 관련 함수 ---
 
 export const createGuild = async (guildName) => {
@@ -125,10 +182,6 @@ export const createGuild = async (guildName) => {
     });
 };
 
-/**
- * 길드와 그 하위 프롬프트 컬렉션을 모두 삭제합니다.
- * @param {string} guildId 
- */
 export const deleteGuild = async (guildId) => {
     const guildRef = doc(db, GUILDS_COLLECTION, guildId);
     const promptsRef = collection(guildRef, PROMPTS_COLLECTION);

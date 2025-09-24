@@ -1,7 +1,8 @@
 import { onAuthStateChangedListener, signInWithGoogle, signOutUser, getCurrentUser } from './auth.js';
 import { 
     onPromptsUpdate, addPrompt, updatePrompt, deletePrompt, getPromptVersions, 
-    createGuild, onGuildsUpdate, onGuildPromptsUpdate, deleteGuild
+    createGuild, onGuildsUpdate, onGuildPromptsUpdate, deleteGuild,
+    incrementUseCount, ratePrompt
 } from './services/firestore-service.js';
 import { createPromptCard } from './components/PromptCard.js';
 import { openModal } from './components/PromptModal.js';
@@ -66,14 +67,14 @@ function renderPrompts(promptsToRender) {
         return;
     }
 
-    let userRole = 'viewer'; // Default role
+    let userRole = 'viewer';
     if (activeView.type === 'guild') {
         const activeGuild = userGuilds.find(g => g.id === activeView.id);
         if (activeGuild && currentUser) {
             userRole = activeGuild.members[currentUser.uid] || 'viewer';
         }
     } else {
-        userRole = 'owner'; // User is always owner of their personal prompts
+        userRole = 'owner';
     }
 
     promptsToRender.sort((a, b) => (b.updatedAt?.toDate() || 0) - (a.updatedAt?.toDate() || 0));
@@ -116,7 +117,6 @@ function renderGuilds() {
     }
 }
 
-
 // --- 핵심 로직 ---
 function updateActiveView(type, id = null, name = '내 프롬프트') {
     activeView = { type, id, name };
@@ -128,7 +128,6 @@ function updateActiveView(type, id = null, name = '내 프롬프트') {
         const guildBtn = document.querySelector(`.guild-btn[data-guild-id="${id}"]`);
         if (guildBtn) guildBtn.classList.add('active');
     } else {
-        // 개인 뷰로 전환 시 'All' 카테고리 활성화
         const allCategoryBtn = document.querySelector('.category-btn[data-category="All"]');
         if (allCategoryBtn) allCategoryBtn.classList.add('active');
     }
@@ -183,14 +182,30 @@ async function handleNewPrompt() {
 }
 
 async function handleGridClick(event) {
-    const button = event.target.closest('.btn-icon');
+    const target = event.target;
+    const card = target.closest('.prompt-card');
+    if (!card) return;
+
+    const promptId = card.dataset.id;
+    const guildId = activeView.type === 'guild' ? activeView.id : null;
+
+    // Handle Rating Stars
+    if (target.classList.contains('rating-star')) {
+        const rating = parseInt(target.dataset.rating, 10);
+        try {
+            await ratePrompt(promptId, rating, guildId);
+            toast.success('평점이 등록되었습니다.');
+        } catch (error) {
+            toast.error('평점 등록에 실패했습니다.');
+            console.error(error);
+        }
+        return;
+    }
+
+    const button = target.closest('.btn-icon');
     if (!button) return;
 
-    const card = button.closest('.prompt-card');
-    const promptId = card.dataset.id;
     const promptData = allPrompts.find(p => p.id === promptId);
-    
-    const guildId = activeView.type === 'guild' ? activeView.id : null;
 
     if (button.classList.contains('edit-btn')) {
         const result = await openModal(promptData);
@@ -214,7 +229,10 @@ async function handleGridClick(event) {
     } else if (button.classList.contains('copy-btn')) {
         const contentToCopy = card.querySelector('pre code').textContent;
         navigator.clipboard.writeText(contentToCopy)
-            .then(() => toast.success('프롬프트가 클립보드에 복사되었습니다.'))
+            .then(async () => {
+                await incrementUseCount(promptId, guildId);
+                toast.success('프롬프트가 클립보드에 복사되었습니다.');
+            })
             .catch(err => toast.error('복사에 실패했습니다.'));
     } else if (button.classList.contains('history-btn')) {
         if (guildId) {
@@ -229,6 +247,7 @@ async function handleGridClick(event) {
         }
     }
 }
+
 
 function handleCategoryClick(event) {
     const button = event.target.closest('.category-btn');
@@ -268,7 +287,6 @@ async function handleGuildListClick(event) {
         if (guild) {
             const guildDeleted = await openGuildManageModal(guild);
             if (guildDeleted) {
-                // 길드가 삭제되면 개인 뷰로 전환
                 switchToPersonalView();
             }
         }
