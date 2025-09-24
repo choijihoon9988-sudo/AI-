@@ -1,17 +1,16 @@
-// 모든 부품(모듈)들을 정확한 최종 경로에서 불러와.
-import { onAuthStateChangedListener, signInWithGoogle, signOutUser, handleRedirectResult } from './auth.js';
+// public/scripts/main.js (최종 완성본)
+import { onAuthStateChangedListener, signInWithGoogle, signOutUser } from './auth.js';
 import { onPromptsUpdate, addPrompt, updatePrompt, deletePrompt } from './services/firestore-service.js';
 import { createPromptCard } from './components/PromptCard.js';
 import { openModal } from './components/PromptModal.js';
 import { toast } from './utils/toast-service.js';
-
-// (이하 모든 코드는 이전과 동일)
 
 const userProfileContainer = document.getElementById('user-profile');
 const promptGrid = document.getElementById('prompt-grid');
 const newPromptButton = document.getElementById('new-prompt-btn');
 
 let unsubscribeFromPrompts = null;
+let currentUid = null; // 현재 사용자 ID를 저장할 변수
 
 function renderUserProfile(user) {
     if (user) {
@@ -105,11 +104,16 @@ async function handleGridClick(event) {
 }
 
 async function initializeApp() {
-    console.log("앱 초기화 시작!");
-    await handleRedirectResult(); 
     newPromptButton.addEventListener('click', handleNewPrompt);
     promptGrid.addEventListener('click', handleGridClick);
+
     onAuthStateChangedListener(user => {
+        const newUid = user ? user.uid : null;
+        if (newUid === currentUid) {
+            return;
+        }
+        currentUid = newUid;
+
         renderUserProfile(user);
         if (user) {
             renderSkeletonLoader();

@@ -1,63 +1,56 @@
-import { 
-  GoogleAuthProvider, 
-  signInWithRedirect, // 팝업 대신 페이지 이동 방식을 쓸 거야. 이게 더 안정적이야.
-  getRedirectResult,  // 페이지 이동 후 로그인 결과를 가져오는 기능이야.
-  signOut, 
-  onAuthStateChanged 
+// public/scripts/auth.js (Popup 방식으로 완전히 교체)
+import {
+  GoogleAuthProvider,
+  signInWithPopup, // Redirect 대신 Popup을 사용합니다.
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { auth } from './firebase-config.js';
+import { toast } from './utils/toast-service.js';
 
 const provider = new GoogleAuthProvider();
 
 /**
- * Google 계정으로 로그인을 시작해. (페이지 이동 방식)
+ * Google 계정으로 로그인을 시작합니다. (팝업 방식)
  */
 export const signInWithGoogle = async () => {
   try {
-    await signInWithRedirect(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    console.log("로그인 성공!", result.user);
+    toast.success("로그인되었습니다.");
   } catch (error) {
     console.error("Google 로그인 중 에러 발생", error);
+    // 사용자가 팝업을 닫는 등 일반적인 오류는 무시합니다.
+    if (error.code !== 'auth/popup-closed-by-user') {
+        toast.error(`로그인 실패: ${error.message}`);
+    }
   }
 };
 
-/**
- * 페이지가 다시 로드됐을 때 로그인 결과를 처리해.
- */
-export const handleRedirectResult = async () => {
-    try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-            // 로그인이 성공적으로 완료되면 콘솔에 기록을 남겨.
-            console.log("로그인 성공!", result.user);
-        }
-    } catch (error) {
-        console.error("로그인 결과 처리 중 에러 발생", error);
-    }
-}
+// handleRedirectResult 함수는 더 이상 필요 없으므로 완전히 삭제합니다.
 
 /**
- * 현재 사용자를 로그아웃시켜.
+ * 현재 사용자를 로그아웃시킵니다.
  */
 export const signOutUser = async () => {
   try {
     await signOut(auth);
-    console.log("로그아웃 성공");
+    toast.success("로그아웃되었습니다.");
   } catch (error) {
     console.error("로그아웃 중 에러 발생", error);
+    toast.error("로그아웃에 실패했습니다.");
   }
 };
 
 /**
- * 로그인 상태가 바뀌는지 계속 감시하는 리스너를 설정해.
- * @param {function} callback - 상태가 바뀔 때마다 실행될 함수
+ * 로그인 상태가 바뀌는지 계속 감시하는 리스너를 설정합니다.
  */
 export const onAuthStateChangedListener = (callback) => {
-  onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(auth, callback);
 };
 
 /**
- * 현재 로그인된 사용자가 누구인지 알려줘.
- * @returns {object|null} 사용자 정보 또는 null
+ * 현재 로그인된 사용자가 누구인지 알려줍니다.
  */
 export const getCurrentUser = () => {
     return auth.currentUser;
