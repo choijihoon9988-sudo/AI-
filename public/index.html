@@ -1,18 +1,45 @@
-<div id="auth-container">
-    <button id="login-btn" class="apple-style-button">
-        <img src="/assets/images/google-logo.svg" alt="Google logo" />
-        <span>Google 계정으로 시작하기</span>
-    </button>
-    <div id="user-profile" class="hidden">
-        <img id="user-photo" src="" alt="User profile photo" />
-        <span id="user-name"></span>
-        <button id="logout-btn" class="apple-style-button-secondary">로그아웃</button>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지침 메모리 저장 창고</title>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- main.css를 로드하여 기본 스타일을 적용합니다. -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <header>
+        <div id="auth-container">
+            <button id="login-btn" class="apple-style-button">
+                <!-- assets/images/google-logo.svg 파일은 필요에 따라 다른 것으로 대체해야 함 -->
+                <img src="/assets/images/google-logo.svg" alt="Google logo" />
+                <span>Google 계정으로 시작하기</span>
+            </button>
+            <div id="user-profile" class="hidden">
+                <img id="user-photo" src="" alt="User profile photo" />
+                <span id="user-name"></span>
+                <button id="logout-btn" class="apple-style-button-secondary">로그아웃</button>
+            </div>
+        </div>
+    </header>
 
-<div class="prompt-card">
-    <p class="prompt-content">여기에 프롬프트 내용이 들어갑니다...</p>
-    <button class="copy-btn" data-clipboard-text="여기에 프롬프트 내용이 들어갑니다...">
-        복사
-    </button>
-</div>
+    <main>
+        <div class="prompt-card">
+            <p class="prompt-content">여기에 프롬프트 내용이 들어갑니다...</p>
+            <button class="copy-btn" data-clipboard-text="여기에 프롬프트 내용이 들어갑니다...">
+                복사
+            </button>
+        </div>
+    </main>
+
+    <!--
+    main.js 파일은 모듈 시스템을 사용하므로, type="module" 속성을 추가해야 합니다.
+    이는 import/export 구문을 브라우저가 인식하도록 합니다.
+    -->
+    <script src="scripts/main.js" type="module"></script>
+</body>
+</html>
