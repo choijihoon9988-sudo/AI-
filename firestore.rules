@@ -4,25 +4,19 @@ service cloud.firestore {
 
     // 개인 프롬프트에 대한 규칙
     match /prompts/{promptId} {
+      // 주인이 있고, 길드 소속이 아닌 개인 프롬프트에 대한 규칙
       function isOwner() {
         return request.auth != null && request.auth.uid == resource.data.userId;
       }
+      // 길드에 소속된 프롬프트인지 확인
       function isGuildPrompt() {
-        // guildId 필드가 있는지 확인하여 길드 프롬프트 여부 판단
         return "guildId" in resource.data;
       }
 
-      // ✨ 오류 수정: list와 get을 분리하여 목록 조회를 명시적으로 허용
-      // get: 개별 문서는 소유자만 접근 가능
-      allow get: if isOwner() && !isGuildPrompt();
-      // list: 'userId'로 필터링하는 경우에만 목록 조회를 허용
-      allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
+      allow read, update, delete: if isOwner() && !isGuildPrompt();
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId && !isGuildPrompt();
 
-      // 쓰기 권한은 기존과 동일
-      allow update, delete: if isOwner() && !isGuildPrompt();
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId && !("guildId" in request.resource.data);
-
-      // 버전 관리 서브컬렉션 규칙
+      // 버전 관리 서브컬렉션 규칙 (기존과 동일)
       match /versions/{versionId} {
         allow read, create: if isOwner();
       }
@@ -30,28 +24,26 @@ service cloud.firestore {
 
     // 길드(팀) 정보에 대한 규칙
     match /guilds/{guildId} {
+      // 길드 멤버인지 확인 (역할: owner, member)
       function isGuildMember() {
-        return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'editor', 'viewer'];
+        return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'member'];
       }
-      function isGuildEditorOrOwner() {
-          return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'editor'];
-      }
+      // 길드 소유주인지 확인
       function isGuildOwner() {
         return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] == 'owner';
       }
 
       // 길드 멤버는 길드 정보를 읽을 수 있음
       allow read: if isGuildMember();
-      // 길드 소유주만 길드 정보를 수정하거나 삭제할 수 있음
+      // 길드 소유주만 길드 정보를 수정(멤버 추가/삭제 등)하거나 길드를 삭제할 수 있음
       allow update, delete: if isGuildOwner();
       // 로그인한 사용자는 누구나 길드를 생성할 수 있음
       allow create: if request.auth != null;
 
       // 길드에 소속된 프롬프트에 대한 규칙
       match /prompts/{promptId} {
-        // 길드 멤버는 읽을 수 있고, 오너/에디터는 쓸 수 있음
-        allow read: if isGuildMember();
-        allow write: if isGuildEditorOrOwner();
+        // 길드 멤버는 해당 길드의 프롬프트를 읽고, 쓰고, 수정하고, 삭제할 수 있음
+        allow read, write: if isGuildMember();
       }
     }
   }
