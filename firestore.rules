@@ -7,10 +7,16 @@ service cloud.firestore {
       function isOwner() {
         return request.auth != null && request.auth.uid == resource.data.userId;
       }
-      allow read: if isOwner();
+
+      // ✨ 최종 버그 수정: get과 list 규칙을 명확히 분리하여 목록 조회 권한 문제 해결
+      allow get: if isOwner();
+      allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
+      
+      // 쓰기 권한
       allow update, delete: if isOwner();
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
 
+      // 버전 관리 서브컬렉션 규칙
       match /versions/{versionId} {
         allow read, create: if isOwner();
       }
@@ -22,13 +28,12 @@ service cloud.firestore {
         return request.auth != null && resource.data.memberIds.hasAny([request.auth.uid]);
       }
       function isGuildEditorOrOwner() {
-        return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'editor'];
+          return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'editor'];
       }
       function isGuildOwner() {
         return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] == 'owner';
       }
 
-      // ✨ 'list' 규칙 추가 및 'get' 규칙 분리
       allow get: if isGuildMember();
       allow list: if request.auth != null && request.query.where.memberIds.hasAny([request.auth.uid]);
 
