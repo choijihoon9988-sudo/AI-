@@ -38,10 +38,20 @@
         <main id="main-content" class="main-content">
             <header class="main-header">
                 <h2 class="main-header-title">내 프롬프트</h2>
-                <div class="search-container">
-                    <div class="search-input-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="search" id="search-input" class="search-input" placeholder="프롬프트 검색...">
+                <div class="header-controls">
+                    <div class="search-container">
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="search" id="search-input" class="search-input" placeholder="프롬프트 검색...">
+                        </div>
+                    </div>
+                    <div class="sort-container">
+                        <select id="sort-select" class="p-form-control">
+                            <option value="updatedAt">최신 수정순</option>
+                            <option value="avg_rating">별점 높은순</option>
+                            <option value="use_count">사용 많은순</option>
+                            <option value="title">이름순</option>
+                        </select>
                     </div>
                 </div>
                 <button id="new-prompt-btn" class="p-btn p-btn-primary new-prompt-btn" type="button">

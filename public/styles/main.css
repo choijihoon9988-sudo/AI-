@@ -26,55 +26,6 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* ... (이전 CSS 코드는 동일) ... */
-
-.prompt-card-footer {
-    padding: 0.75rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    background-color: #fafafa;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.prompt-stats {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    align-items: center;
-}
-
-.rating-stars {
-    display: flex;
-    gap: 0.25rem;
-    color: var(--border-color);
-}
-
-.rating-stars .rating-star {
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.rating-stars .rating-star.fas {
-    color: var(--star-color);
-}
-
-
-.category-tag {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background-color: var(--tag-bg);
-    color: var(--tag-text);
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-/* ... (이하 모든 CSS 코드는 이전과 동일) ... */
-
 /* --- 앱 레이아웃 (CSS Grid) --- */
 .app-container {
     display: grid;
@@ -101,7 +52,7 @@ body {
     flex-direction: column;
     position: relative;
     z-index: 1;
-    isolation: isolate; /* ✨ z-index 버그 재발 방지 코드 */
+    isolation: isolate;
 }
 
 /* --- 사이드바 스타일 --- */
@@ -223,16 +174,24 @@ body {
     white-space: nowrap;
 }
 
+.header-controls {
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
+    gap: 1rem;
+    align-items: center;
+}
+
 .search-container {
     flex-grow: 1;
     display: flex;
     justify-content: center;
+    max-width: 500px;
 }
 
 .search-input-wrapper {
     position: relative;
     width: 100%;
-    max-width: 500px;
 }
 
 .search-input {
@@ -262,6 +221,11 @@ body {
     z-index: 1;
 }
 
+.sort-container select {
+    font-size: 0.9rem;
+    min-width: 150px;
+}
+
 .new-prompt-btn {
     white-space: nowrap;
 }
@@ -274,7 +238,8 @@ body {
     flex-grow: 1;
 }
 
-/* --- 프롬프트 카드 스타일 --- */
+/* ... (이하 코드 동일) ... */
+
 .prompt-card {
     background-color: var(--card-bg);
     border-radius: 12px;
@@ -347,7 +312,51 @@ body {
     margin: 0;
 }
 
-/* --- 빈 상태 메시지 및 스켈레톤 --- */
+.prompt-card-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: #fafafa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.prompt-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    align-items: center;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 0.25rem;
+    color: var(--border-color);
+}
+
+.rating-stars .rating-star {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.rating-stars .rating-star.fas {
+    color: var(--star-color);
+}
+
+
+.category-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--tag-bg);
+    color: var(--tag-text);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
 .empty-state {
     display: flex;
     justify-content: center;
@@ -451,6 +460,7 @@ body {
     background-color: #f9f9f9;
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
+    justify-content: space-between;
 }
 
 .version-history-modal .modal {
@@ -479,9 +489,6 @@ body {
     font-size: 0.9rem;
 }
 
-.modal-footer {
-    justify-content: space-between;
-}
 .invite-form {
     display: flex;
     gap: 0.5rem;
@@ -531,5 +538,8 @@ body {
         gap: 0.75rem;
     }
     .main-header-title { display: none; }
+    .header-controls {
+        width: 100%;
+    }
     .prompt-grid { padding: 1rem; }
 }
