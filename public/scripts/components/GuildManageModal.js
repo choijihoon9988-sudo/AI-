@@ -1,6 +1,6 @@
 // public/scripts/components/GuildManageModal.js
 
-import { getUserByEmail, updateGuildMembers } from '../services/firestore-service.js';
+import { getUserByEmail, updateGuildMembers, deleteGuild } from '../services/firestore-service.js';
 import { toast } from '../utils/toast-service.js';
 
 let modalElement = null;
@@ -32,6 +32,7 @@ function createModal() {
                     <div id="member-list" class="member-list"></div>
                 </div>
                 <div class="modal-footer">
+                    <button class="p-btn p-btn-danger" id="guild-delete-btn">Delete Guild</button>
                     <button class="p-btn" id="guild-manage-done-btn">Done</button>
                 </div>
             </div>
@@ -43,6 +44,7 @@ function createModal() {
     // Event Listeners
     document.getElementById('guild-manage-close-btn').addEventListener('click', () => closeModal(false));
     document.getElementById('guild-manage-done-btn').addEventListener('click', () => closeModal(true));
+    document.getElementById('guild-delete-btn').addEventListener('click', handleDeleteGuild);
     modalElement.addEventListener('click', e => {
         if (e.target.id === 'guild-manage-modal-overlay') closeModal(false);
     });
@@ -146,6 +148,22 @@ async function handleMemberListClick(event) {
     }
 }
 
+async function handleDeleteGuild() {
+    const guildName = currentGuild.name;
+    if (prompt(`To confirm, please type the name of the guild to delete: "${guildName}"`) !== guildName) {
+        toast.error("Guild name did not match. Deletion cancelled.");
+        return;
+    }
+
+    try {
+        await deleteGuild(currentGuild.id);
+        toast.success(`Guild "${guildName}" has been deleted.`);
+        closeModal(true);
+    } catch (error) {
+        toast.error("Failed to delete guild.");
+        console.error("Error deleting guild:", error);
+    }
+}
 
 function closeModal(shouldUpdate) {
     if (modalElement) {
@@ -162,7 +180,7 @@ export function openGuildManageModal(guild) {
         createModal();
     }
     
-    currentGuild = guild;
+    currentGuild = JSON.parse(JSON.stringify(guild)); // Deep copy to avoid mutation issues
     document.getElementById('guild-manage-modal-title').textContent = `Manage "${guild.name}"`;
     renderMemberList();
 
