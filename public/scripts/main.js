@@ -1,6 +1,6 @@
 // src/js/main.js (최종 버전)
 
-import { onAuthStateChangedListener, signInWithGoogle, signOutUser } from './auth.js';
+import { onAuthStateChangedListener, signInWithGoogle, signOutUser, handleRedirectResult } from './auth.js';
 import { onPromptsUpdate, addPrompt, updatePrompt, deletePrompt } from './firestore-service.js';
 import { createPromptCard } from './components/PromptCard.js';
 import { openModal } from './components/PromptModal.js';
@@ -133,8 +133,12 @@ async function handleGridClick(event) {
 
 // --- 애플리케이션 초기화 ---
 
-function initializeApp() {
+async function initializeApp() { // async 키워드 추가
     console.log("App Initialized");
+
+    // 리디렉션 결과 처리 (페이지 로드 시 가장 먼저)
+    await handleRedirectResult(); 
+    
     // 이벤트 리스너 설정
     newPromptButton.addEventListener('click', handleNewPrompt);
     promptGrid.addEventListener('click', handleGridClick);

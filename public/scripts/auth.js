@@ -1,6 +1,7 @@
 import { 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithRedirect, // signInWithPopup 대신 Redirect 사용
+  getRedirectResult,  // Redirect 결과를 가져오기 위해 추가
   signOut, 
   onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -9,18 +10,29 @@ import { auth } from './firebase-config.js';
 const provider = new GoogleAuthProvider();
 
 /**
- * Google 계정으로 로그인을 시작합니다.
+ * Google 계정으로 로그인을 시작합니다. (Redirect 방식)
  */
 export const signInWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, provider);
-    console.log("Google Sign-In successful", result.user);
-    return result.user;
+    await signInWithRedirect(auth, provider);
   } catch (error) {
-    console.error("Error during Google Sign-In", error);
-    return null;
+    console.error("Error during Google Sign-In Redirect", error);
   }
 };
+
+/**
+ * 페이지 로드 시 리디렉션 결과를 처리합니다.
+ */
+export const handleRedirectResult = async () => {
+    try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+            console.log("Google Sign-In successful via redirect", result.user);
+        }
+    } catch (error) {
+        console.error("Error handling redirect result", error);
+    }
+}
 
 /**
  * 현재 사용자를 로그아웃시킵니다.
