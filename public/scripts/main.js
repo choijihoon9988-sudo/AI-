@@ -11,6 +11,10 @@ const promptGrid = document.getElementById('prompt-grid');
 const newPromptButton = document.getElementById('new-prompt-btn');
 const searchInput = document.getElementById('search-input');
 const categoryList = document.getElementById('category-list');
+// 길드 기능 UI 요소 참조 (향후 사용)
+const guildList = document.getElementById('guild-list');
+const createGuildButton = document.getElementById('create-guild-btn');
+
 
 // --- 애플리케이션 상태 관리 ---
 let allPrompts = [];
@@ -28,7 +32,6 @@ function debounce(func, delay) {
 
 // --- UI 렌더링 함수 ---
 function renderUserProfile(user) {
-    console.log('1. renderUserProfile 호출됨, user:', user ? user.uid : 'null');
     if (user) {
         userProfileContainer.innerHTML = `
             <img src="${user.photoURL}" alt="${user.displayName}" referrerpolicy="no-referrer">
@@ -48,7 +51,6 @@ function renderUserProfile(user) {
 }
 
 function renderPrompts(promptsToRender) {
-    console.log('4. renderPrompts 호출됨, 렌더링할 프롬프트 개수:', promptsToRender?.length);
     promptGrid.innerHTML = '';
     if (!promptsToRender || promptsToRender.length === 0) {
         promptGrid.innerHTML = `<div class="empty-state">표시할 프롬프트가 없습니다.</div>`;
@@ -62,13 +64,14 @@ function renderPrompts(promptsToRender) {
 }
 
 function renderCategories() {
-    console.log('3. renderCategories 호출됨');
     const categories = ['All', ...new Set(allPrompts.map(p => p.category).filter(Boolean))];
-    categoryList.innerHTML = categories.map(category => `
-        <button class="category-btn ${category === activeCategory ? 'active' : ''}" data-category="${category}">
-            ${category}
-        </button>
-    `).join('');
+    if (categoryList) {
+        categoryList.innerHTML = categories.map(category => `
+            <button class="category-btn ${category === activeCategory ? 'active' : ''}" data-category="${category}">
+                ${category}
+            </button>
+        `).join('');
+    }
 }
 
 // --- 핵심 로직 ---
@@ -157,7 +160,6 @@ function handleCategoryClick(event) {
 
 // --- 애플리케이션 초기화 ---
 function initializeApp() {
-    console.log('initializeApp 시작됨');
     const debouncedFilter = debounce(filterAndRenderPrompts, 300);
 
     newPromptButton.addEventListener('click', handleNewPrompt);
@@ -166,25 +168,20 @@ function initializeApp() {
     categoryList.addEventListener('click', handleCategoryClick);
 
     onAuthStateChangedListener(user => {
-        console.log('onAuthStateChangedListener 실행됨, user:', user ? user.uid : 'null');
         renderUserProfile(user);
         
         if (unsubscribeFromPrompts) {
-            console.log('기존 리스너 해제');
             unsubscribeFromPrompts();
             unsubscribeFromPrompts = null;
         }
 
         if (user) {
-            console.log('사용자 로그인됨. onPromptsUpdate 리스너 설정 시작.');
             unsubscribeFromPrompts = onPromptsUpdate((prompts) => {
-                console.log('2. onPromptsUpdate 콜백 수신, 프롬프트 개수:', prompts?.length);
                 allPrompts = prompts || [];
                 renderCategories();
                 filterAndRenderPrompts();
             });
         } else {
-            console.log('사용자 로그아웃됨. 상태 초기화.');
             allPrompts = [];
             activeCategory = 'All';
             searchInput.value = '';
@@ -194,7 +191,4 @@ function initializeApp() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOMContentLoaded 이벤트 발생');
-    initializeApp();
-});
+document.addEventListener('DOMContentLoaded', initializeApp);

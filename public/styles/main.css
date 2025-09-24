@@ -48,6 +48,9 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 1;
+    isolation: isolate; /* ✨ z-index 버그 재발 방지 코드 */
 }
 
 /* --- 사이드바 스타일 --- */
