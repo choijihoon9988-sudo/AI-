@@ -3,8 +3,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // prompts 컬렉션에 대한 규칙
     match /prompts/{promptId} {
-      // 사용자는 자신의 프롬프트만 읽고, 생성하고, 수정하고, 삭제할 수 있습니다.
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      // CREATE: 사용자는 userId가 자신의 uid와 일치하는 프롬프트만 생성할 수 있습니다.
+      // create 요청 시에는 아직 데이터가 없으므로 request.resource.data를 확인해야 합니다.
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+
+      // READ, UPDATE, DELETE: 사용자는 자신의 프롬프트만 읽고, 수정하고, 삭제할 수 있습니다.
+      // 이미 존재하는 데이터를 대상으로 하므로 resource.data를 확인합니다.
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
