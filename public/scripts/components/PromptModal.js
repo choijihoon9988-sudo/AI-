@@ -29,7 +29,10 @@ function createModal() {
                         </div>
                         <div class="form-group">
                             <label for="prompt-content">내용</label>
-                            <textarea class="form-control" id="prompt-content" rows="10" placeholder="여기에 프롬프트를 입력하세요..." required></textarea>
+                            <div class="textarea-wrapper">
+                                <textarea class="form-control" id="prompt-content" rows="10" placeholder="여기에 프롬프트를 입력하세요..." required></textarea>
+                                <button type="button" class="btn-icon ai-helper-btn-modal" title="AI로 개선하기"><i class="fas fa-magic"></i></button>
+                            </div>
                         </div>
                     </form>
                 </div>

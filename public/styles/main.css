@@ -522,6 +522,58 @@ body {
     color: white;
 }
 
+.ai-helper-modal .modal {
+    max-width: 900px;
+}
+
+.ai-helper-modal .modal-body {
+    padding: 0;
+}
+
+.comparison-container {
+    display: flex;
+    width: 100%;
+}
+
+.comparison-panel {
+    width: 50%;
+    padding: 1.5rem;
+    box-sizing: border-box;
+}
+
+.comparison-panel:first-child {
+    border-right: 1px solid var(--border-color);
+}
+
+.comparison-panel h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.comparison-panel pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    background-color: #f0f0f5;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 0.9rem;
+    min-height: 200px;
+}
+
+.textarea-wrapper {
+    position: relative;
+}
+
+.ai-helper-btn-modal {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 5;
+}
+
 
 @media (max-width: 768px) {
     .app-container {
@@ -540,4 +592,15 @@ body {
         width: 100%;
     }
     .prompt-grid { padding: 1rem; }
+
+    .comparison-container {
+        flex-direction: column;
+    }
+    .comparison-panel {
+        width: 100%;
+    }
+    .comparison-panel:first-child {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
 }

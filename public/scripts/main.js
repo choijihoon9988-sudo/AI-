@@ -2,13 +2,14 @@ import { onAuthStateChangedListener, signInWithGoogle, signOutUser, getCurrentUs
 import { 
     onPromptsUpdate, addPrompt, updatePrompt, deletePrompt, getPromptVersions, 
     createGuild, onGuildsUpdate, onGuildPromptsUpdate, deleteGuild,
-    incrementUseCount, ratePrompt
+    incrementUseCount, ratePrompt, getAISuggestion
 } from './services/firestore-service.js';
 import { createPromptCard } from './components/PromptCard.js';
 import { openModal } from './components/PromptModal.js';
 import { openVersionHistoryModal } from './components/VersionHistoryModal.js';
 import { openGuildModal } from './components/GuildModal.js';
 import { openGuildManageModal } from './components/GuildManageModal.js';
+import { openAIHelperModal } from './components/AIHelperModal.js';
 import { toast } from './utils/toast-service.js';
 
 // --- DOM 요소 참조 ---
@@ -152,7 +153,7 @@ function updateActiveView(type, id = null, name = '내 프롬프트') {
 
 function filterAndRenderPrompts() {
     const searchTerm = searchInput.value.toLowerCase().trim();
-    let filteredPrompts = [...allPrompts]; // 원본 배열 수정을 방지하기 위해 복사본 생성
+    let filteredPrompts = [...allPrompts];
 
     if (activeCategory !== 'All') {
         filteredPrompts = filteredPrompts.filter(p => p.category === activeCategory);
@@ -165,7 +166,6 @@ function filterAndRenderPrompts() {
         );
     }
 
-    // 정렬 로직
     filteredPrompts.sort((a, b) => {
         switch (activeSort) {
             case 'avg_rating':
@@ -230,7 +230,20 @@ async function handleGridClick(event) {
 
     const promptData = allPrompts.find(p => p.id === promptId);
 
-    if (button.classList.contains('edit-btn')) {
+    if (button.classList.contains('ai-helper-btn')) {
+        toast.success("AI에게 개선안을 요청하는 중...");
+        try {
+            const suggestion = await getAISuggestion(promptData.content);
+            const newContent = await openAIHelperModal(promptData.content, suggestion);
+            if (newContent) {
+                await updatePrompt(promptId, { ...promptData, content: newContent }, guildId);
+                toast.success('AI의 제안으로 프롬프트가 업데이트되었습니다.');
+            }
+        } catch (error) {
+            toast.error("AI 개선 제안에 실패했습니다.");
+            console.error(error);
+        }
+    } else if (button.classList.contains('edit-btn')) {
         const result = await openModal(promptData);
         if (result) {
             try {

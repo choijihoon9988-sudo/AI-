@@ -25,7 +25,6 @@ export function createPromptCard(prompt, userRole = 'owner', currentUserId) {
     const canEdit = userRole === 'owner' || userRole === 'editor';
     const useCount = prompt.use_count || 0;
     
-    // 현재 유저의 평점을 우선적으로 표시, 없다면 전체 평균 사용
     const userRating = prompt.ratings ? prompt.ratings[currentUserId] : null;
     const displayRating = userRating || prompt.avg_rating || 0;
     const avgRatingText = (prompt.avg_rating || 0).toFixed(1);
@@ -45,6 +44,9 @@ export function createPromptCard(prompt, userRole = 'owner', currentUserId) {
             <div class="prompt-card-header">
                 <h3>${escapeHTML(prompt.title)}</h3>
                 <div class="prompt-card-actions">
+                    <button class="btn-icon ai-helper-btn" title="AI로 개선하기">
+                        <i class="fas fa-magic"></i>
+                    </button>
                     <button class="btn-icon history-btn" title="버전 기록">
                         <i class="fas fa-history"></i>
                     </button>
