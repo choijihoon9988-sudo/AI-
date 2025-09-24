@@ -4,12 +4,16 @@ service cloud.firestore {
     // prompts 컬렉션에 대한 규칙
     match /prompts/{promptId} {
       // CREATE: 사용자는 userId가 자신의 uid와 일치하는 프롬프트만 생성할 수 있습니다.
-      // create 요청 시에는 아직 데이터가 없으므로 request.resource.data를 확인해야 합니다.
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
 
       // READ, UPDATE, DELETE: 사용자는 자신의 프롬프트만 읽고, 수정하고, 삭제할 수 있습니다.
-      // 이미 존재하는 데이터를 대상으로 하므로 resource.data를 확인합니다.
       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+      // versions 서브컬렉션에 대한 규칙
+      match /versions/{versionId} {
+        // 소유자만 자신의 프롬프트에 대한 버전을 생성하고 읽을 수 있습니다.
+        allow read, create: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/prompts/$(promptId)).data.userId;
+      }
     }
   }
 }

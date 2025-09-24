@@ -11,6 +11,8 @@
     --text-primary: #1d1d1f;
     --text-secondary: #6e6e73;
     --accent-color: #007aff;
+    --tag-bg: #eef5ff;
+    --tag-text: #005fcc;
 }
 
 body {
@@ -37,6 +39,8 @@ body {
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
+    padding: 0;
+    z-index: 20; /* 사이드바가 메인 콘텐츠보다 위에 있도록 설정 */
 }
 
 .main-content {
@@ -57,6 +61,42 @@ body {
     margin: 0;
 }
 
+.sidebar-nav {
+    flex-grow: 1;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.category-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: none;
+    background-color: transparent;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: var(--text-primary);
+}
+
+.category-btn:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.category-btn.active {
+    background-color: var(--accent-color);
+    color: white;
+    font-weight: 500;
+}
+
 .user-profile {
     margin-top: auto;
     border-top: 1px solid var(--border-color);
@@ -64,7 +104,6 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 1rem;
-    text-align: center;
 }
 
 .user-profile img {
@@ -80,6 +119,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1.5rem;
     padding: 0 2rem;
     border-bottom: 1px solid var(--border-color);
     background-color: rgba(255, 255, 255, 0.8);
@@ -89,13 +129,57 @@ body {
     z-index: 10;
 }
 
-.main-header h2 {
+.main-header-title {
     margin: 0;
+    white-space: nowrap;
+}
+
+.search-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.search-input-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+}
+
+.search-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: #f0f0f5;
+    font-size: 1rem;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.search-input:focus {
+    background-color: var(--card-bg);
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    z-index: 1;
+}
+
+.new-prompt-btn {
+    white-space: nowrap;
 }
 
 .prompt-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
     padding: 2rem;
     flex-grow: 1;
@@ -106,14 +190,21 @@ body {
     background-color: var(--card-bg);
     border-radius: 12px;
     border: 1px solid var(--border-color);
-    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.2s ease-in-out;
+    overflow: hidden;
 }
 
 .prompt-card:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.prompt-card-main {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .prompt-card-header {
@@ -127,17 +218,26 @@ body {
     margin: 0;
     font-size: 1.1rem;
     flex-grow: 1;
+    padding-right: 1rem;
 }
 
-.prompt-card-actions button {
+.prompt-card-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.btn-icon {
     background: none;
     border: none;
     cursor: pointer;
     color: var(--text-secondary);
     padding: 0.25rem;
-    margin-left: 0.5rem;
+    font-size: 1rem;
+    line-height: 1;
 }
-.prompt-card-actions button:hover {
+
+.btn-icon:hover {
     color: var(--accent-color);
 }
 
@@ -149,17 +249,32 @@ body {
     font-size: 0.9rem;
     color: var(--text-primary);
     flex-grow: 1;
-    overflow: hidden; /* 내부 컨텐츠가 넘치는 것을 방지 */
+    overflow: hidden;
 }
 
-/* ✨ 이 부분을 추가하여 줄바꿈 문제를 해결합니다. ✨ */
 .prompt-card-content pre {
-    white-space: pre-wrap; /* 공백은 유지하되, 필요시 줄바꿈 */
-    word-break: break-all;   /* 긴 단어나 URL이 있을 경우 강제 줄바꿈 */
-    margin: 0;               /* <pre> 태그의 불필요한 기본 마진 제거 */
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
 }
 
-/* --- 빈 상태 메시지 --- */
+.prompt-card-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: #fafafa;
+}
+
+.category-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--tag-bg);
+    color: var(--tag-text);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* --- 빈 상태 메시지 및 스켈레톤 --- */
 .empty-state {
     display: flex;
     justify-content: center;
@@ -167,27 +282,9 @@ body {
     height: 100%;
     color: var(--text-secondary);
     font-size: 1.2rem;
-    grid-column: 1 / -1; /* 그리드 전체를 차지하도록 설정 */
+    grid-column: 1 / -1;
 }
 
-/* --- 반응형 디자인 --- */
-@media (max-width: 768px) {
-   .app-container {
-        grid-template-columns: 1fr;
-        grid-template-areas: "main";
-    }
-   .sidebar {
-        display: none; /* 모바일에서는 사이드바를 숨깁니다. */
-    }
-   .main-header {
-        padding: 0 1rem;
-    }
-   .prompt-grid {
-        padding: 1rem;
-    }
-}
-
-/* --- 스켈레톤 로더 스타일 --- */
 .skeleton {
     opacity: 0.7;
     animation: skeleton-loading 1.5s infinite linear;
@@ -196,12 +293,8 @@ body {
 }
 
 @keyframes skeleton-loading {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 .skeleton-card {
@@ -211,19 +304,10 @@ body {
     padding: 1.5rem;
 }
 
-.skeleton-header {
-    height: 20px;
-    width: 60%;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-}
+.skeleton-header { height: 20px; width: 60%; margin-bottom: 1rem; border-radius: 4px; }
+.skeleton-content { height: 100px; border-radius: 8px; }
 
-.skeleton-content {
-    height: 100px;
-    border-radius: 8px;
-}
-
-/* --- Modal Styles --- */
+/* --- 모달 공통 스타일 --- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -252,6 +336,7 @@ body {
     width: 90%;
     transform: scale(0.95);
     transition: transform 0.3s ease;
+    z-index: 1001; /* ✨ 오류 수정: 모달이 항상 최상단에 오도록 z-index 추가 */
 }
 
 .modal-overlay.active .modal {
@@ -295,55 +380,46 @@ body {
     border-bottom-right-radius: 12px;
 }
 
-.form-group {
-    margin-bottom: 1.5rem;
+/* --- 버전 기록 모달 스타일 --- */
+.version-history-modal .modal {
+    max-width: 800px;
 }
 
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--text-secondary);
+.version-history-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 1rem;
 }
-
-.form-group .form-control {
-    box-sizing: border-box; /* 너비 계산 문제를 방지하기 위해 추가 */
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
+.version-item {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem 0;
+}
+.version-item:last-child { border-bottom: none; }
+.version-meta { margin-bottom: 1rem; color: var(--text-secondary); }
+.version-meta h4 { margin: 0 0 0.5rem 0; color: var(--text-primary); }
+.version-content {
+    background-color: #f0f0f5;
     border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    padding: 1rem;
+    font-family: "SF Mono", "Fira Code", monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9rem;
 }
 
-.form-group .form-control:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
-}
-
-/* --- Custom Button Style to Avoid Conflicts --- */
-.custom-action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    font-weight: 500;
-    text-align: center;
-    border: 1px solid var(--accent-color);
-    border-radius: 8px;
-    background-color: var(--accent-color);
-    color: #ffffff;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.custom-action-btn:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
-
-.custom-action-btn i {
-    margin-right: 0.5rem;
+/* --- 반응형 디자인 --- */
+@media (max-width: 768px) {
+    .app-container {
+        grid-template-columns: 1fr;
+        grid-template-areas: "main";
+    }
+    .sidebar { display: none; }
+    .main-header {
+        flex-direction: column;
+        height: auto;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+    .main-header-title { display: none; }
+    .prompt-grid { padding: 1rem; }
 }

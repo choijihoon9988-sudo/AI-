@@ -1,12 +1,14 @@
-// public/scripts/components/PromptModal.js (수정 완료)
+// public/scripts/components/PromptModal.js
 
 let modalElement = null;
 let resolvePromise = null;
 
+/**
+ * 모달 HTML을 생성하고 body에 추가합니다.
+ */
 function createModal() {
     if (document.getElementById('prompt-modal-overlay')) return;
 
-    // Puppertino CSS 프레임워크와 호환되는 모달 HTML 구조로 변경
     const modalHTML = `
         <div class="modal-overlay" id="prompt-modal-overlay">
             <div class="modal" id="prompt-modal">
@@ -20,6 +22,10 @@ function createModal() {
                         <div class="form-group">
                             <label for="prompt-title">Title</label>
                             <input class="form-control" type="text" id="prompt-title" placeholder="e.g., JavaScript Code Reviewer" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prompt-category">Category (Optional)</label>
+                            <input class="form-control" type="text" id="prompt-category" placeholder="e.g., Development, Marketing...">
                         </div>
                         <div class="form-group">
                             <label for="prompt-content">Content</label>
@@ -51,6 +57,7 @@ function createModal() {
             const data = {
                 id: document.getElementById('prompt-id').value,
                 title: document.getElementById('prompt-title').value,
+                category: document.getElementById('prompt-category').value.trim(),
                 content: document.getElementById('prompt-content').value
             };
             closeModal(data);
@@ -62,7 +69,6 @@ function createModal() {
 
 function closeModal(data) {
     if (modalElement) {
-        // 'is-open' 대신 'active' 클래스를 사용하여 Puppertino와 호환성 유지
         modalElement.classList.remove('active');
     }
     if (resolvePromise) {
@@ -75,25 +81,28 @@ export function openModal(promptData = null) {
     if (!modalElement) {
         createModal();
     }
-
+    
     const form = document.getElementById('prompt-form');
     const titleEl = document.getElementById('modal-title');
     const idEl = document.getElementById('prompt-id');
     const promptTitleEl = document.getElementById('prompt-title');
+    const promptCategoryEl = document.getElementById('prompt-category');
     const promptContentEl = document.getElementById('prompt-content');
 
     if (promptData) {
+        // 수정 모드
         titleEl.textContent = 'Edit Prompt';
         idEl.value = promptData.id;
         promptTitleEl.value = promptData.title;
+        promptCategoryEl.value = promptData.category || '';
         promptContentEl.value = promptData.content;
     } else {
+        // 생성 모드
         titleEl.textContent = 'New Prompt';
         form.reset();
         idEl.value = '';
     }
 
-    // 'is-open' 대신 'active' 클래스를 사용하여 모달 표시
     modalElement.classList.add('active');
     promptTitleEl.focus();
 

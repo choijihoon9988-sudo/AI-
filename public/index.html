@@ -15,14 +15,24 @@
             <div class="sidebar-header">
                 <h1>Prompt Stash</h1>
             </div>
-            <div id="user-profile" class="user-profile p-2">
+            <nav class="sidebar-nav">
+                <div id="category-list" class="category-list">
+                    </div>
+            </nav>
+            <div id="user-profile" class="user-profile">
                 </div>
         </aside>
 
         <main id="main-content" class="main-content">
             <header class="main-header">
-                <h2>My Prompts</h2>
-                <button id="new-prompt-btn" class="custom-action-btn" type="button">
+                <h2 class="main-header-title">My Prompts</h2>
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="search" id="search-input" class="search-input" placeholder="Search prompts...">
+                    </div>
+                </div>
+                <button id="new-prompt-btn" class="p-btn p-btn-primary new-prompt-btn" type="button">
                     <i class="fas fa-plus"></i> New Prompt
                 </button>
             </header>
