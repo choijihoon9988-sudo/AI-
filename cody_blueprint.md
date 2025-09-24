@@ -15,7 +15,7 @@
 
 ## 데이터 모델 (Firestore)
 
-- **`prompts`**: 개인 프롬프트 저장 컬렉션
+- **`prompts`**: 개인 프롬프트 저장 컬리션
   - `{promptId}`
     - `userId`: String (소유자 UID)
     - `title`: String
@@ -89,4 +89,5 @@
 - **`main.js`**:
     - `handleNewPrompt` 함수에서 `activeView`가 길드일 때 `guildId`를 `addPrompt` 서비스로 전달하도록 수정.
     - `handleGridClick` 함수에서 `activeView`의 타입을 체크하여, 길드 뷰일 경우 `updatePrompt`와 `deletePrompt` 호출 시 `guildId`를 전달하도록 로직 분기.
-- **`firestore.rules` (v.20250925-fix)**: 개인 프롬프트 조회 권한 오류 수정. 잘못된 문법을 사용하던 `list` 규칙을
+- **`firestore.rules` (v.20250925-fix)**: 개인 프롬프트 조회 권한 오류 수정. 잘못된 문법을 사용하던 `list` 규칙을 삭제하고, 표준 문법을 사용하는 `read` 규칙으로 통합하여 로그인한 사용자가 자신의 프롬프트 목록을 정상적으로 불러올 수 있도록 수정.
+- **`firestore.rules` (v.20250925-fix2)**: 길드 목록 조회 권한 오류 수정. 개인 프롬프트 규칙과 동일하게, 잘못된 문법을 사용하던 `list` 규칙을 `read` 규칙으로 통합하여 사용자가 속한 길드 목록을 정상적으로 불러오도록 수정.
