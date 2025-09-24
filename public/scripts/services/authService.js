@@ -1,5 +1,5 @@
 // Firebase SDK의 필요한 함수들을 import 합니다.
-// 모듈러 SDK는 필요한 기능만 가져와 번들 크기를 줄여줍니다.
+// 모듈러 SDK는 웹에서 사용할 때 전체 URL 또는 .js 확장자를 포함한 경로를 사용해야 합니다.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 import { firebaseConfig } from '../config.js'; // Firebase 설정 객체를 별도 파일에서 관리
@@ -22,6 +22,12 @@ const signInWithGoogle = async () => {
     } catch (error) {
         // 에러 처리 (예: 팝업이 차단되었거나 사용자가 닫은 경우)
         console.error("Google 로그인 에러:", error.code, error.message);
+
+        // API 키 관련 에러에 대한 사용자 친화적 메시지 추가
+        if (error.code === 'auth/invalid-api-key' || error.message.includes('API key not valid')) {
+            alert("Firebase 설정에 문제가 있습니다. API 키를 확인해주세요.");
+        }
+        
         return null;
     }
 };
