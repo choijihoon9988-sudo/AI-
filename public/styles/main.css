@@ -14,6 +14,7 @@
     --tag-bg: #eef5ff;
     --tag-text: #005fcc;
     --danger-color: #ff3b30;
+    --star-color: #ffc107;
 }
 
 body {
@@ -24,6 +25,55 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+/* ... (이전 CSS 코드는 동일) ... */
+
+.prompt-card-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: #fafafa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.prompt-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    align-items: center;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 0.25rem;
+    color: var(--border-color);
+}
+
+.rating-stars .rating-star {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.rating-stars .rating-star.fas {
+    color: var(--star-color);
+}
+
+
+.category-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--tag-bg);
+    color: var(--tag-text);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* ... (이하 모든 CSS 코드는 이전과 동일) ... */
 
 /* --- 앱 레이아웃 (CSS Grid) --- */
 .app-container {
@@ -297,39 +347,6 @@ body {
     margin: 0;
 }
 
-.prompt-card-footer {
-    padding: 0.75rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    background-color: #fafafa;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.prompt-stats {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-.rating-stars .fa-star {
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.category-tag {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background-color: var(--tag-bg);
-    color: var(--tag-text);
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
 /* --- 빈 상태 메시지 및 스켈레톤 --- */
 .empty-state {
     display: flex;
@@ -341,7 +358,6 @@ body {
     grid-column: 1 / -1;
 }
 
-/* ... (이하 스켈레톤, 모달, 반응형 스타일은 이전과 동일) ... */
 .skeleton {
     opacity: 0.7;
     animation: skeleton-loading 1.5s infinite linear;

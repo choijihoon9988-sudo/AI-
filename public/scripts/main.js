@@ -79,7 +79,7 @@ function renderPrompts(promptsToRender) {
 
     promptsToRender.sort((a, b) => (b.updatedAt?.toDate() || 0) - (a.updatedAt?.toDate() || 0));
     promptsToRender.forEach(prompt => {
-        const card = createPromptCard(prompt, userRole);
+        const card = createPromptCard(prompt, userRole, currentUser?.uid);
         promptGrid.appendChild(card);
     });
 }
@@ -189,11 +189,20 @@ async function handleGridClick(event) {
     const promptId = card.dataset.id;
     const guildId = activeView.type === 'guild' ? activeView.id : null;
 
-    // Handle Rating Stars
     if (target.classList.contains('rating-star')) {
         const rating = parseInt(target.dataset.rating, 10);
         try {
             await ratePrompt(promptId, rating, guildId);
+            
+            // 즉각적인 UI 피드백
+            const starsContainer = target.parentElement;
+            const allStars = starsContainer.querySelectorAll('.rating-star');
+            allStars.forEach(star => {
+                const starRating = parseInt(star.dataset.rating, 10);
+                star.classList.toggle('fas', starRating <= rating);
+                star.classList.toggle('far', starRating > rating);
+            });
+
             toast.success('평점이 등록되었습니다.');
         } catch (error) {
             toast.error('평점 등록에 실패했습니다.');

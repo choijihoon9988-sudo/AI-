@@ -12,8 +12,7 @@ import {
     getDocs,
     orderBy,
     writeBatch,
-    increment,
-    arrayUnion
+    increment
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { db } from '../firebase-config.js';
 import { getCurrentUser } from '../auth.js';
@@ -62,7 +61,7 @@ export const addPrompt = async (promptData, guildId = null) => {
         updatedAt: serverTimestamp(),
         use_count: 0,
         avg_rating: 0,
-        ratings: []
+        ratings: {} // 배열에서 객체(Map)로 변경
     };
 
     if (guildId) {
@@ -122,11 +121,6 @@ export const getPromptVersions = async (promptId) => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-/**
- * 프롬프트 사용 횟수를 1 증가시킵니다.
- * @param {string} promptId 
- * @param {string|null} guildId 
- */
 export const incrementUseCount = async (promptId, guildId = null) => {
     let promptDocRef;
     if (guildId) {
@@ -137,13 +131,10 @@ export const incrementUseCount = async (promptId, guildId = null) => {
     await updateDoc(promptDocRef, { use_count: increment(1) });
 };
 
-/**
- * 프롬프트에 별점을 추가하고 평균을 업데이트합니다.
- * @param {string} promptId 
- * @param {number} rating 
- * @param {string|null} guildId 
- */
 export const ratePrompt = async (promptId, rating, guildId = null) => {
+    const user = getCurrentUser();
+    if (!user) throw new Error("User not authenticated.");
+
     let promptDocRef;
     if (guildId) {
         promptDocRef = doc(db, GUILDS_COLLECTION, guildId, PROMPTS_COLLECTION, promptId);
@@ -156,8 +147,10 @@ export const ratePrompt = async (promptId, rating, guildId = null) => {
         if (!promptDoc.exists()) throw "Document does not exist!";
         
         const data = promptDoc.data();
-        const newRatings = [...(data.ratings || []), rating];
-        const newAvgRating = newRatings.reduce((a, b) => a + b, 0) / newRatings.length;
+        const newRatings = { ...data.ratings, [user.uid]: rating };
+        
+        const ratingValues = Object.values(newRatings);
+        const newAvgRating = ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length;
 
         transaction.update(promptDocRef, {
             ratings: newRatings,
