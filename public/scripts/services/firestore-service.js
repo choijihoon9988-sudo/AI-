@@ -19,30 +19,47 @@ const PROMPTS_COLLECTION = 'prompts';
 const GUILDS_COLLECTION = 'guilds';
 const VERSIONS_SUBCOLLECTION = 'versions';
 
-// ... onPromptsUpdate, addPrompt, updatePrompt, deletePrompt, getPromptVersions 함수들은 기존과 동일 ...
+/**
+ * 특정 사용자의 개인 프롬프트 목록을 실시간으로 가져옵니다.
+ * @param {function} callback 
+ * @returns {function} Firestore 리스너 해제 함수
+ */
 export const onPromptsUpdate = (callback) => {
     const user = getCurrentUser();
     if (!user) return () => {};
+    
     const q = query(collection(db, PROMPTS_COLLECTION), where("userId", "==", user.uid));
     return onSnapshot(q, (snapshot) => {
         const prompts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         callback(prompts);
     }, console.error);
 };
+
+/**
+ * 새로운 프롬프트를 Firestore에 추가합니다. (개인 또는 길드)
+ * @param {object} promptData - { title, content, category }
+ * @param {string|null} guildId - 길드 ID (길드 프롬프트일 경우)
+ */
 export const addPrompt = async (promptData, guildId = null) => {
     const user = getCurrentUser();
     if (!user) throw new Error("로그인이 필요합니다.");
+
     let collectionRef;
     let data;
+
     if (guildId) {
+        // 길드 프롬프트
         collectionRef = collection(db, 'guilds', guildId, 'prompts');
         data = { ...promptData, authorId: user.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
     } else {
+        // 개인 프롬프트
         collectionRef = collection(db, PROMPTS_COLLECTION);
         data = { ...promptData, userId: user.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
     }
     await addDoc(collectionRef, data);
 };
+
+
 export const updatePrompt = async (promptId, updatedData) => {
     const promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
     try {
@@ -65,10 +82,12 @@ export const updatePrompt = async (promptId, updatedData) => {
         throw error;
     }
 };
+
 export const deletePrompt = async (promptId) => {
     const promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
     await deleteDoc(promptDocRef);
 };
+
 export const getPromptVersions = async (promptId) => {
     const versionsColRef = collection(db, PROMPTS_COLLECTION, promptId, VERSIONS_SUBCOLLECTION);
     const q = query(versionsColRef, orderBy('savedAt', 'desc'));
@@ -76,37 +95,24 @@ export const getPromptVersions = async (promptId) => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-
 // --- 길드 관련 함수 ---
 
-/**
- * 새로운 길드를 생성합니다. (memberIds 배열 추가)
- * @param {string} guildName - 생성할 길드의 이름
- */
 export const createGuild = async (guildName) => {
     const user = getCurrentUser();
     if (!user) throw new Error("로그인이 필요합니다.");
-
     await addDoc(collection(db, GUILDS_COLLECTION), {
         name: guildName,
         createdAt: serverTimestamp(),
         members: {
             [user.uid]: 'owner'
         },
-        memberIds: [user.uid] // ✨ 쿼리를 위한 memberIds 배열 추가
+        memberIds: [user.uid]
     });
 };
 
-/**
- * 현재 사용자가 멤버로 속한 길드 목록을 실시간으로 가져옵니다. (쿼리 방식 변경)
- * @param {function} callback
- * @returns {function} Firestore 리스너 해제 함수
- */
 export const onGuildsUpdate = (callback) => {
     const user = getCurrentUser();
     if (!user) return () => {};
-
-    // ✨ 'array-contains' 쿼리를 사용하여 더 효율적이고 안전하게 길드를 찾음
     const q = query(collection(db, GUILDS_COLLECTION), where('memberIds', 'array-contains', user.uid));
     
     return onSnapshot(q, (snapshot) => {
@@ -115,6 +121,12 @@ export const onGuildsUpdate = (callback) => {
     }, console.error);
 };
 
+/**
+ * 특정 길드의 프롬프트 목록을 실시간으로 가져옵니다.
+ * @param {string} guildId - 프롬프트를 가져올 길드의 ID
+ * @param {function} callback - 데이터 변경 시 호출될 콜백 함수
+ * @returns {function} Firestore 리스너 해제 함수
+ */
 export const onGuildPromptsUpdate = (guildId, callback) => {
     const user = getCurrentUser();
     if (!user) return () => {};

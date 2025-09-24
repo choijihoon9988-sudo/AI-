@@ -99,7 +99,6 @@ function updateActiveView(type, id = null, name = 'My Prompts') {
     activeView = { type, id, name };
     mainHeaderTitle.textContent = name;
 
-    // 모든 활성 상태 UI 초기화
     document.querySelectorAll('.guild-btn, .category-btn').forEach(btn => btn.classList.remove('active'));
 
     if (type === 'guild') {
@@ -110,20 +109,19 @@ function updateActiveView(type, id = null, name = 'My Prompts') {
         if (allCategoryBtn) allCategoryBtn.classList.add('active');
     }
 
-    // 데이터 리스너 교체
     if (unsubscribeFromPrompts) unsubscribeFromPrompts();
 
-    if (type === 'personal') {
-        unsubscribeFromPrompts = onPromptsUpdate(updateAndRenderAll);
-    } else if (type === 'guild' && id) {
-        unsubscribeFromPrompts = onGuildPromptsUpdate(id, updateAndRenderAll);
-    }
-}
+    const dataUpdateCallback = (prompts) => {
+        allPrompts = prompts || [];
+        renderCategories();
+        filterAndRenderPrompts();
+    };
 
-function updateAndRenderAll(prompts) {
-    allPrompts = prompts || [];
-    renderCategories();
-    filterAndRenderPrompts();
+    if (type === 'personal') {
+        unsubscribeFromPrompts = onPromptsUpdate(dataUpdateCallback);
+    } else if (type === 'guild' && id) {
+        unsubscribeFromPrompts = onGuildPromptsUpdate(id, dataUpdateCallback);
+    }
 }
 
 function filterAndRenderPrompts() {
@@ -158,14 +156,52 @@ async function handleNewPrompt() {
 }
 
 async function handleGridClick(event) {
-    // ... 기존 로직과 동일 ...
+    // This part will be expanded in the next step to handle guild prompts
+    const button = event.target.closest('.btn-icon');
+    if (!button) return;
+
+    const card = button.closest('.prompt-card');
+    const promptId = card.dataset.id;
+    const promptData = allPrompts.find(p => p.id === promptId);
+
+    if (button.classList.contains('edit-btn')) {
+        const result = await openModal(promptData);
+        if (result) {
+            try {
+                await updatePrompt(promptId, { title: result.title, content: result.content, category: result.category });
+                toast.success('프롬프트가 성공적으로 수정되었습니다.');
+            } catch (error) {
+                toast.error('프롬프트 수정에 실패했습니다.');
+            }
+        }
+    } else if (button.classList.contains('delete-btn')) {
+        if (confirm('정말로 이 프롬프트를 삭제하시겠습니까?')) {
+            try {
+                await deletePrompt(promptId);
+                toast.success('프롬프트가 삭제되었습니다.');
+            } catch (error) {
+                toast.error('프롬프트 삭제에 실패했습니다.');
+            }
+        }
+    } else if (button.classList.contains('copy-btn')) {
+        const contentToCopy = card.querySelector('pre code').textContent;
+        navigator.clipboard.writeText(contentToCopy)
+            .then(() => toast.success('프롬프트가 클립보드에 복사되었습니다.'))
+            .catch(err => toast.error('복사에 실패했습니다.'));
+    } else if (button.classList.contains('history-btn')) {
+        try {
+            const versions = await getPromptVersions(promptId);
+            openVersionHistoryModal(versions);
+        } catch (error) {
+            toast.error('버전 기록을 불러오는 데 실패했습니다.');
+        }
+    }
 }
 
 function handleCategoryClick(event) {
     const button = event.target.closest('.category-btn');
     if (!button) return;
     
-    // 길드 뷰일 때 카테고리 'All'을 누르면 개인 뷰로 전환
     if (activeView.type === 'guild' && button.dataset.category === 'All') {
         switchToPersonalView();
     } else {
@@ -202,7 +238,6 @@ function switchToPersonalView() {
     updateActiveView('personal', null, 'My Prompts');
 }
 
-
 // --- 애플리케이션 초기화 ---
 function initializeApp() {
     const debouncedFilter = debounce(filterAndRenderPrompts, 300);
@@ -222,7 +257,7 @@ function initializeApp() {
         if (unsubscribeFromGuilds) unsubscribeFromGuilds();
 
         if (user) {
-            updateActiveView('personal', null, 'My Prompts'); // 로그인 시 개인 뷰로 시작
+            updateActiveView('personal', null, 'My Prompts');
             unsubscribeFromGuilds = onGuildsUpdate((guilds) => {
                 userGuilds = guilds || [];
                 renderGuilds();
