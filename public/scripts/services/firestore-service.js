@@ -59,34 +59,58 @@ export const addPrompt = async (promptData, guildId = null) => {
     await addDoc(collectionRef, data);
 };
 
-
-export const updatePrompt = async (promptId, updatedData) => {
-    const promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
-    try {
-        await runTransaction(db, async (transaction) => {
-            const promptDoc = await transaction.get(promptDocRef);
-            if (!promptDoc.exists()) throw "Document does not exist!";
-            const oldData = promptDoc.data();
-            const versionData = {
-                title: oldData.title,
-                content: oldData.content,
-                category: oldData.category || '',
-                savedAt: oldData.updatedAt || oldData.createdAt
-            };
-            const versionDocRef = doc(collection(promptDocRef, VERSIONS_SUBCOLLECTION));
-            transaction.set(versionDocRef, versionData);
-            transaction.update(promptDocRef, { ...updatedData, updatedAt: serverTimestamp() });
-        });
-    } catch (error) {
-        console.error("Transaction failed: ", error);
-        throw error;
+/**
+ * 프롬프트를 수정합니다. (개인 또는 길드)
+ * @param {string} promptId - 수정할 프롬프트 ID
+ * @param {object} updatedData - 수정할 데이터
+ * @param {string|null} guildId - 길드 ID (길드 프롬프트일 경우)
+ */
+export const updatePrompt = async (promptId, updatedData, guildId = null) => {
+    let promptDocRef;
+    if (guildId) {
+        promptDocRef = doc(db, GUILDS_COLLECTION, guildId, PROMPTS_COLLECTION, promptId);
+         // 길드 프롬프트는 버전 관리를 아직 구현하지 않으므로 직접 업데이트
+        await updateDoc(promptDocRef, { ...updatedData, updatedAt: serverTimestamp() });
+    } else {
+        promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
+        // 개인 프롬프트는 버전 관리를 위해 트랜잭션 사용
+        try {
+            await runTransaction(db, async (transaction) => {
+                const promptDoc = await transaction.get(promptDocRef);
+                if (!promptDoc.exists()) throw "Document does not exist!";
+                const oldData = promptDoc.data();
+                const versionData = {
+                    title: oldData.title,
+                    content: oldData.content,
+                    category: oldData.category || '',
+                    savedAt: oldData.updatedAt || oldData.createdAt
+                };
+                const versionDocRef = doc(collection(promptDocRef, VERSIONS_SUBCOLLECTION));
+                transaction.set(versionDocRef, versionData);
+                transaction.update(promptDocRef, { ...updatedData, updatedAt: serverTimestamp() });
+            });
+        } catch (error) {
+            console.error("Transaction failed: ", error);
+            throw error;
+        }
     }
 };
 
-export const deletePrompt = async (promptId) => {
-    const promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
+/**
+ * 프롬프트를 삭제합니다. (개인 또는 길드)
+ * @param {string} promptId - 삭제할 프롬프트 ID
+ * @param {string|null} guildId - 길드 ID (길드 프롬프트일 경우)
+ */
+export const deletePrompt = async (promptId, guildId = null) => {
+    let promptDocRef;
+    if (guildId) {
+        promptDocRef = doc(db, GUILDS_COLLECTION, guildId, PROMPTS_COLLECTION, promptId);
+    } else {
+        promptDocRef = doc(db, PROMPTS_COLLECTION, promptId);
+    }
     await deleteDoc(promptDocRef);
 };
+
 
 export const getPromptVersions = async (promptId) => {
     const versionsColRef = collection(db, PROMPTS_COLLECTION, promptId, VERSIONS_SUBCOLLECTION);

@@ -105,10 +105,12 @@ function updateActiveView(type, id = null, name = 'My Prompts') {
         const guildBtn = document.querySelector(`.guild-btn[data-guild-id="${id}"]`);
         if (guildBtn) guildBtn.classList.add('active');
     } else {
+        // 'My Prompts'를 클릭했을 때 'All' 카테고리가 활성화되도록
         const allCategoryBtn = document.querySelector('.category-btn[data-category="All"]');
         if (allCategoryBtn) allCategoryBtn.classList.add('active');
     }
-
+    activeCategory = 'All'; // 뷰가 변경되면 항상 'All' 카테고리로 초기화
+    
     if (unsubscribeFromPrompts) unsubscribeFromPrompts();
 
     const dataUpdateCallback = (prompts) => {
@@ -146,7 +148,9 @@ async function handleNewPrompt() {
     const result = await openModal();
     if (result) {
         try {
-            await addPrompt({ title: result.title, content: result.content, category: result.category }, activeView.id);
+            // 길드 뷰인 경우 guildId를 전달
+            const guildId = activeView.type === 'guild' ? activeView.id : null;
+            await addPrompt({ title: result.title, content: result.content, category: result.category }, guildId);
             toast.success('프롬프트가 성공적으로 추가되었습니다.');
         } catch (error) {
             toast.error('프롬프트 추가에 실패했습니다.');
@@ -156,19 +160,21 @@ async function handleNewPrompt() {
 }
 
 async function handleGridClick(event) {
-    // This part will be expanded in the next step to handle guild prompts
     const button = event.target.closest('.btn-icon');
     if (!button) return;
 
     const card = button.closest('.prompt-card');
     const promptId = card.dataset.id;
     const promptData = allPrompts.find(p => p.id === promptId);
+    
+    // 현재 뷰가 길드인지 확인
+    const guildId = activeView.type === 'guild' ? activeView.id : null;
 
     if (button.classList.contains('edit-btn')) {
         const result = await openModal(promptData);
         if (result) {
             try {
-                await updatePrompt(promptId, { title: result.title, content: result.content, category: result.category });
+                await updatePrompt(promptId, { title: result.title, content: result.content, category: result.category }, guildId);
                 toast.success('프롬프트가 성공적으로 수정되었습니다.');
             } catch (error) {
                 toast.error('프롬프트 수정에 실패했습니다.');
@@ -177,7 +183,7 @@ async function handleGridClick(event) {
     } else if (button.classList.contains('delete-btn')) {
         if (confirm('정말로 이 프롬프트를 삭제하시겠습니까?')) {
             try {
-                await deletePrompt(promptId);
+                await deletePrompt(promptId, guildId);
                 toast.success('프롬프트가 삭제되었습니다.');
             } catch (error) {
                 toast.error('프롬프트 삭제에 실패했습니다.');
@@ -189,6 +195,10 @@ async function handleGridClick(event) {
             .then(() => toast.success('프롬프트가 클립보드에 복사되었습니다.'))
             .catch(err => toast.error('복사에 실패했습니다.'));
     } else if (button.classList.contains('history-btn')) {
+        if (guildId) {
+            toast.error('길드 프롬프트의 버전 기록은 아직 지원되지 않습니다.');
+            return;
+        }
         try {
             const versions = await getPromptVersions(promptId);
             openVersionHistoryModal(versions);
@@ -202,6 +212,7 @@ function handleCategoryClick(event) {
     const button = event.target.closest('.category-btn');
     if (!button) return;
     
+    // 길드 뷰 상태에서 'All' 카테고리 버튼을 누르면 개인 뷰로 전환
     if (activeView.type === 'guild' && button.dataset.category === 'All') {
         switchToPersonalView();
     } else {
