@@ -1,14 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // 사용자 정보는 본인만 생성/수정 가능하고, 모든 인증된 사용자가 읽을 수 있게 함 (이메일 검색용)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
 
     // 개인 프롬프트에 대한 규칙
     match /prompts/{promptId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
 
-      // 버전 관리 서브컬렉션 규칙
       match /versions/{versionId} {
         allow read, create: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/prompts/$(promptId)).data.userId;
       }
@@ -19,23 +23,27 @@ service cloud.firestore {
       function isGuildMember() {
         return request.auth != null && resource.data.memberIds.hasAny([request.auth.uid]);
       }
-      function isGuildEditorOrOwner() {
-          return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'editor'];
+       function isGuildOwner() {
+        return request.auth != null && resource.data.members[request.auth.uid] == 'owner';
       }
-      function isGuildOwner() {
-        return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] == 'owner';
-      }
-
-      // get과 list 규칙을 read로 통합하고, isGuildMember 함수를 사용하도록 수정
-      allow read: if isGuildMember();
       
-      allow update, delete: if isGuildOwner();
+      allow read: if isGuildMember();
+      // 오직 owner만이 members와 memberIds 필드를 수정할 수 있도록 제한
+      allow update: if isGuildOwner() && request.resource.data.keys().hasOnly(['members', 'memberIds', 'name']);
+      allow delete: if isGuildOwner();
       allow create: if request.auth != null;
 
-      // 길드에 소속된 프롬프트 규칙
+      // 길드에 소속된 프롬프트(하위 컬렉션)에 대한 규칙
       match /prompts/{promptId} {
-        allow read: if isGuildMember();
-        allow write: if isGuildEditorOrOwner();
+        function isParentGuildMember() {
+          return get(/databases/$(database)/documents/guilds/$(guildId)).data.memberIds.hasAny([request.auth.uid]);
+        }
+        function isParentGuildEditorOrOwner() {
+          return get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'editor'];
+        }
+
+        allow read: if isParentGuildMember();
+        allow write: if isParentGuildEditorOrOwner();
       }
     }
   }

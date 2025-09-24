@@ -3,12 +3,34 @@ import {
   GoogleAuthProvider,
   signInWithPopup, // Redirect 대신 Popup을 사용합니다.
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  updateProfile,
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-import { auth } from './firebase-config.js';
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { auth, db } from './firebase-config.js';
 import { toast } from './utils/toast-service.js';
 
 const provider = new GoogleAuthProvider();
+
+/**
+ * 사용자 생성 시 users 컬렉션에 문서 추가
+ * @param {User} user Firebase Auth 사용자 객체
+ */
+const createUserDocument = async (user) => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    const { displayName, email, uid } = user;
+    try {
+        await setDoc(userRef, {
+            displayName,
+            email,
+            uid,
+        });
+    } catch (error) {
+        console.error("Error creating user document:", error);
+    }
+};
 
 /**
  * Google 계정으로 로그인을 시작합니다. (팝업 방식)
@@ -16,6 +38,7 @@ const provider = new GoogleAuthProvider();
 export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, provider);
+    await createUserDocument(result.user); // 로그인 시 사용자 문서 생성/업데이트
     console.log("로그인 성공!", result.user);
     toast.success("로그인되었습니다.");
   } catch (error) {

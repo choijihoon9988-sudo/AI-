@@ -1,4 +1,4 @@
-import { onAuthStateChangedListener, signInWithGoogle, signOutUser } from './auth.js';
+import { onAuthStateChangedListener, signInWithGoogle, signOutUser, getCurrentUser } from './auth.js';
 import { 
     onPromptsUpdate, addPrompt, updatePrompt, deletePrompt, getPromptVersions, 
     createGuild, onGuildsUpdate, onGuildPromptsUpdate 
@@ -7,6 +7,7 @@ import { createPromptCard } from './components/PromptCard.js';
 import { openModal } from './components/PromptModal.js';
 import { openVersionHistoryModal } from './components/VersionHistoryModal.js';
 import { openGuildModal } from './components/GuildModal.js';
+import { openGuildManageModal } from './components/GuildManageModal.js';
 import { toast } from './utils/toast-service.js';
 
 // --- DOM 요소 참조 ---
@@ -22,10 +23,11 @@ const mainHeaderTitle = document.querySelector('.main-header-title');
 // --- 애플리케이션 상태 관리 ---
 let allPrompts = [];
 let userGuilds = [];
-let activeView = { type: 'personal', id: null, name: 'My Prompts' }; // { type: 'personal' | 'guild', id: guildId, name: guildName }
+let activeView = { type: 'personal', id: null, name: 'My Prompts' };
 let activeCategory = 'All';
 let unsubscribeFromPrompts = null;
 let unsubscribeFromGuilds = null;
+let currentUser = null;
 
 // --- 유틸리티 함수 ---
 function debounce(func, delay) {
@@ -38,6 +40,7 @@ function debounce(func, delay) {
 
 // --- UI 렌더링 함수 ---
 function renderUserProfile(user) {
+    currentUser = user;
     if (user) {
         userProfileContainer.innerHTML = `
             <img src="${user.photoURL}" alt="${user.displayName}" referrerpolicy="no-referrer">
@@ -62,12 +65,24 @@ function renderPrompts(promptsToRender) {
         promptGrid.innerHTML = `<div class="empty-state">표시할 프롬프트가 없습니다.</div>`;
         return;
     }
+
+    let userRole = 'viewer'; // Default role
+    if (activeView.type === 'guild') {
+        const activeGuild = userGuilds.find(g => g.id === activeView.id);
+        if (activeGuild && currentUser) {
+            userRole = activeGuild.members[currentUser.uid] || 'viewer';
+        }
+    } else {
+        userRole = 'owner'; // User is always owner of their personal prompts
+    }
+
     promptsToRender.sort((a, b) => (b.updatedAt?.toDate() || 0) - (a.updatedAt?.toDate() || 0));
     promptsToRender.forEach(prompt => {
-        const card = createPromptCard(prompt);
+        const card = createPromptCard(prompt, userRole);
         promptGrid.appendChild(card);
     });
 }
+
 
 function renderCategories() {
     const categories = ['All', ...new Set(allPrompts.map(p => p.category).filter(Boolean))];
@@ -86,30 +101,37 @@ function renderGuilds() {
             guildList.innerHTML = `<span class="empty-guild-list">No guilds yet.</span>`;
             return;
         }
-        guildList.innerHTML = userGuilds.map(guild => `
-            <button class="guild-btn ${activeView.type === 'guild' && activeView.id === guild.id ? 'active' : ''}" data-guild-id="${guild.id}" data-guild-name="${guild.name}">
-                ${guild.name}
-            </button>
-        `).join('');
+        guildList.innerHTML = userGuilds.map(guild => {
+            const userRole = guild.members[currentUser?.uid];
+            const isOwner = userRole === 'owner';
+            return `
+                <div class="guild-item">
+                    <button class="guild-btn ${activeView.type === 'guild' && activeView.id === guild.id ? 'active' : ''}" data-guild-id="${guild.id}" data-guild-name="${guild.name}">
+                        ${guild.name}
+                    </button>
+                    ${isOwner ? `<button class="btn-icon manage-guild-btn" data-guild-id="${guild.id}" title="Manage Guild"><i class="fas fa-cog"></i></button>` : ''}
+                </div>
+            `;
+        }).join('');
     }
 }
+
 
 // --- 핵심 로직 ---
 function updateActiveView(type, id = null, name = 'My Prompts') {
     activeView = { type, id, name };
     mainHeaderTitle.textContent = name;
 
-    document.querySelectorAll('.guild-btn, .category-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.guild-btn').forEach(btn => btn.classList.remove('active'));
 
     if (type === 'guild') {
         const guildBtn = document.querySelector(`.guild-btn[data-guild-id="${id}"]`);
         if (guildBtn) guildBtn.classList.add('active');
     } else {
-        // 'My Prompts'를 클릭했을 때 'All' 카테고리가 활성화되도록
         const allCategoryBtn = document.querySelector('.category-btn[data-category="All"]');
         if (allCategoryBtn) allCategoryBtn.classList.add('active');
     }
-    activeCategory = 'All'; // 뷰가 변경되면 항상 'All' 카테고리로 초기화
+    activeCategory = 'All'; 
     
     if (unsubscribeFromPrompts) unsubscribeFromPrompts();
 
@@ -148,7 +170,6 @@ async function handleNewPrompt() {
     const result = await openModal();
     if (result) {
         try {
-            // 길드 뷰인 경우 guildId를 전달
             const guildId = activeView.type === 'guild' ? activeView.id : null;
             await addPrompt({ title: result.title, content: result.content, category: result.category }, guildId);
             toast.success('프롬프트가 성공적으로 추가되었습니다.');
@@ -167,7 +188,6 @@ async function handleGridClick(event) {
     const promptId = card.dataset.id;
     const promptData = allPrompts.find(p => p.id === promptId);
     
-    // 현재 뷰가 길드인지 확인
     const guildId = activeView.type === 'guild' ? activeView.id : null;
 
     if (button.classList.contains('edit-btn')) {
@@ -212,7 +232,6 @@ function handleCategoryClick(event) {
     const button = event.target.closest('.category-btn');
     if (!button) return;
     
-    // 길드 뷰 상태에서 'All' 카테고리 버튼을 누르면 개인 뷰로 전환
     if (activeView.type === 'guild' && button.dataset.category === 'All') {
         switchToPersonalView();
     } else {
@@ -236,13 +255,22 @@ async function handleCreateGuild() {
     }
 }
 
-function handleGuildClick(event) {
-    const button = event.target.closest('.guild-btn');
+async function handleGuildListClick(event) {
+    const button = event.target.closest('button');
     if (!button) return;
 
     const guildId = button.dataset.guildId;
-    const guildName = button.dataset.guildName;
-    updateActiveView('guild', guildId, guildName);
+
+    if (button.classList.contains('manage-guild-btn')) {
+        const guild = userGuilds.find(g => g.id === guildId);
+        if (guild) {
+            await openGuildManageModal(guild);
+            // After modal closes, the onGuildsUpdate listener will automatically re-render the list if needed.
+        }
+    } else if (button.classList.contains('guild-btn')) {
+        const guildName = button.dataset.guildName;
+        updateActiveView('guild', guildId, guildName);
+    }
 }
 
 function switchToPersonalView() {
@@ -258,7 +286,7 @@ function initializeApp() {
     searchInput.addEventListener('input', debouncedFilter);
     categoryList.addEventListener('click', handleCategoryClick);
     createGuildButton.addEventListener('click', handleCreateGuild);
-    guildList.addEventListener('click', handleGuildClick);
+    guildList.addEventListener('click', handleGuildListClick);
     mainHeaderTitle.addEventListener('click', switchToPersonalView);
 
     onAuthStateChangedListener(user => {

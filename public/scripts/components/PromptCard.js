@@ -13,12 +13,15 @@ function escapeHTML(str) {
 /**
  * 프롬프트 데이터를 기반으로 HTML 카드 요소를 생성합니다.
  * @param {object} prompt - { id, title, content, category }를 포함하는 프롬프트 객체
+ * @param {string} userRole - 현재 길드에서의 사용자 역할 ('owner', 'editor', 'viewer')
  * @returns {HTMLElement} - 생성된 카드 div 요소
  */
-export function createPromptCard(prompt) {
+export function createPromptCard(prompt, userRole = 'owner') {
     const card = document.createElement('div');
     card.className = 'prompt-card';
     card.dataset.id = prompt.id;
+
+    const canEdit = userRole === 'owner' || userRole === 'editor';
 
     const categoryTag = prompt.category 
         ? `<div class="category-tag">${escapeHTML(prompt.category)}</div>` 
@@ -35,12 +38,14 @@ export function createPromptCard(prompt) {
                     <button class="btn-icon copy-btn" title="Copy Prompt">
                         <i class="fas fa-copy"></i>
                     </button>
+                    ${canEdit ? `
                     <button class="btn-icon edit-btn" title="Edit Prompt">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="btn-icon delete-btn" title="Delete Prompt">
                         <i class="fas fa-trash-alt"></i>
                     </button>
+                    ` : ''}
                 </div>
             </div>
             <div class="prompt-card-content">

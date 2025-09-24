@@ -10,7 +10,9 @@ import {
     serverTimestamp,
     runTransaction,
     getDocs,
-    orderBy
+    orderBy,
+    writeBatch,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { db } from '../firebase-config.js';
 import { getCurrentUser } from '../auth.js';
@@ -18,6 +20,33 @@ import { getCurrentUser } from '../auth.js';
 const PROMPTS_COLLECTION = 'prompts';
 const GUILDS_COLLECTION = 'guilds';
 const VERSIONS_SUBCOLLECTION = 'versions';
+const USERS_COLLECTION = 'users';
+
+/**
+ * 이메일로 사용자를 검색합니다.
+ * @param {string} email 
+ * @returns {object|null} 사용자 데이터 또는 null
+ */
+export const getUserByEmail = async (email) => {
+    const q = query(collection(db, USERS_COLLECTION), where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    return querySnapshot.docs[0].data();
+};
+
+/**
+ * 길드 멤버 정보를 업데이트합니다.
+ * @param {string} guildId 
+ * @param {object} members 
+ * @param {Array<string>} memberIds 
+ */
+export const updateGuildMembers = async (guildId, members, memberIds) => {
+    const guildRef = doc(db, GUILDS_COLLECTION, guildId);
+    await updateDoc(guildRef, { members, memberIds });
+};
+
 
 /**
  * 특정 사용자의 개인 프롬프트 목록을 실시간으로 가져옵니다.
@@ -59,12 +88,7 @@ export const addPrompt = async (promptData, guildId = null) => {
     await addDoc(collectionRef, data);
 };
 
-/**
- * 프롬프트를 수정합니다. (개인 또는 길드)
- * @param {string} promptId - 수정할 프롬프트 ID
- * @param {object} updatedData - 수정할 데이터
- * @param {string|null} guildId - 길드 ID (길드 프롬프트일 경우)
- */
+
 export const updatePrompt = async (promptId, updatedData, guildId = null) => {
     let promptDocRef;
     if (guildId) {
@@ -96,11 +120,6 @@ export const updatePrompt = async (promptId, updatedData, guildId = null) => {
     }
 };
 
-/**
- * 프롬프트를 삭제합니다. (개인 또는 길드)
- * @param {string} promptId - 삭제할 프롬프트 ID
- * @param {string|null} guildId - 길드 ID (길드 프롬프트일 경우)
- */
 export const deletePrompt = async (promptId, guildId = null) => {
     let promptDocRef;
     if (guildId) {
