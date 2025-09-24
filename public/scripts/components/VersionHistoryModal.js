@@ -57,11 +57,19 @@ function renderVersions(versions) {
         return;
     }
 
-    // 최신순으로 정렬
-    versions.sort((a, b) => b.savedAt.toDate() - a.savedAt.toDate());
+    // ✨ 오류 수정: savedAt이 없는 경우를 대비하여 안전하게 정렬
+    versions.sort((a, b) => {
+        const timeA = a.savedAt?.toDate()?.getTime() || 0;
+        const timeB = b.savedAt?.toDate()?.getTime() || 0;
+        return timeB - timeA;
+    });
 
     listContainer.innerHTML = versions.map(version => {
-        const timestamp = version.savedAt ? version.savedAt.toDate().toLocaleString() : 'N/A';
+        // ✨ 오류 수정: savedAt이 Timestamp 객체인지 확인 후 toDate() 호출
+        const timestamp = (version.savedAt && typeof version.savedAt.toDate === 'function')
+            ? version.savedAt.toDate().toLocaleString('ko-KR')
+            : 'Date not available';
+        
         return `
             <div class="version-item">
                 <div class="version-meta">
