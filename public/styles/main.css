@@ -40,7 +40,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0;
-    z-index: 20; /* 사이드바가 메인 콘텐츠보다 위에 있도록 설정 */
+    z-index: 20;
 }
 
 .main-content {
@@ -65,15 +65,35 @@ body {
     flex-grow: 1;
     padding: 1rem;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.category-list {
+.nav-section {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+}
+.nav-section:last-child {
+    border-bottom: none;
+}
+
+.nav-section-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin: 0 0 1rem 0.5rem;
+}
+
+.category-list, .guild-list {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    margin-bottom: 1rem;
 }
 
-.category-btn {
+.category-btn, .guild-btn {
     display: block;
     width: 100%;
     text-align: left;
@@ -87,14 +107,18 @@ body {
     color: var(--text-primary);
 }
 
-.category-btn:hover {
+.category-btn:hover, .guild-btn:hover {
     background-color: rgba(0,0,0,0.05);
 }
 
-.category-btn.active {
+.category-btn.active, .guild-btn.active {
     background-color: var(--accent-color);
     color: white;
     font-weight: 500;
+}
+
+.full-width {
+    width: 100%;
 }
 
 .user-profile {
@@ -336,7 +360,7 @@ body {
     width: 90%;
     transform: scale(0.95);
     transition: transform 0.3s ease;
-    z-index: 1001; /* ✨ 오류 수정: 모달이 항상 최상단에 오도록 z-index 추가 */
+    z-index: 1001;
 }
 
 .modal-overlay.active .modal {

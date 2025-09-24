@@ -1,18 +1,49 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // prompts 컬렉션에 대한 규칙
+
+    // 개인 프롬프트에 대한 규칙
     match /prompts/{promptId} {
-      // CREATE: 사용자는 userId가 자신의 uid와 일치하는 프롬프트만 생성할 수 있습니다.
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // 주인이 있고, 길드 소속이 아닌 개인 프롬프트에 대한 규칙
+      function isOwner() {
+        return request.auth != null && request.auth.uid == resource.data.userId;
+      }
+      // 길드에 소속된 프롬프트인지 확인
+      function isGuildPrompt() {
+        return exists(resource.data.guildId);
+      }
 
-      // READ, UPDATE, DELETE: 사용자는 자신의 프롬프트만 읽고, 수정하고, 삭제할 수 있습니다.
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if isOwner() && !isGuildPrompt();
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId && !isGuildPrompt();
 
-      // versions 서브컬렉션에 대한 규칙
+      // 버전 관리 서브컬렉션 규칙 (기존과 동일)
       match /versions/{versionId} {
-        // 소유자만 자신의 프롬프트에 대한 버전을 생성하고 읽을 수 있습니다.
-        allow read, create: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/prompts/$(promptId)).data.userId;
+        allow read, create: if isOwner();
+      }
+    }
+
+    // 길드(팀) 정보에 대한 규칙
+    match /guilds/{guildId} {
+      // 길드 멤버인지 확인 (역할: owner, member)
+      function isGuildMember() {
+        return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] in ['owner', 'member'];
+      }
+      // 길드 소유주인지 확인
+      function isGuildOwner() {
+        return request.auth != null && get(/databases/$(database)/documents/guilds/$(guildId)).data.members[request.auth.uid] == 'owner';
+      }
+
+      // 길드 멤버는 길드 정보를 읽을 수 있음
+      allow read: if isGuildMember();
+      // 길드 소유주만 길드 정보를 수정(멤버 추가/삭제 등)하거나 길드를 삭제할 수 있음
+      allow update, delete: if isGuildOwner();
+      // 로그인한 사용자는 누구나 길드를 생성할 수 있음
+      allow create: if request.auth != null;
+
+      // 길드에 소속된 프롬프트에 대한 규칙
+      match /prompts/{promptId} {
+        // 길드 멤버는 해당 길드의 프롬프트를 읽고, 쓰고, 수정하고, 삭제할 수 있음
+        allow read, write: if isGuildMember();
       }
     }
   }
