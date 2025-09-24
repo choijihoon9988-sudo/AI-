@@ -77,7 +77,6 @@ async function handleGridClick(event) {
     if (!card) return;
     
     const promptId = card.dataset.id;
-    if (!promptId) return;
 
     if (button.classList.contains('edit-btn')) {
         const title = card.querySelector('h3').textContent;
@@ -100,10 +99,23 @@ async function handleGridClick(event) {
                 toast.error('프롬프트 삭제에 실패했습니다.');
             }
         }
+    } else if (button.classList.contains('copy-btn')) {
+        const contentToCopy = card.querySelector('pre code').textContent;
+        if (!navigator.clipboard) {
+            toast.error('이 브라우저는 클립보드 복사를 지원하지 않습니다.');
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(contentToCopy);
+            toast.success('프롬프트가 클립보드에 복사되었습니다.');
+        } catch (err) {
+            console.error('클립보드 복사 실패:', err);
+            toast.error('프롬프트 복사에 실패했습니다. 보안 연결(HTTPS)인지 확인해주세요.');
+        }
     }
 }
 
-async function initializeApp() {
+function initializeApp() {
     newPromptButton.addEventListener('click', handleNewPrompt);
     promptGrid.addEventListener('click', handleGridClick);
 

@@ -13,6 +13,9 @@ export function createPromptCard(prompt) {
         <div class="prompt-card-header">
             <h3>${escapeHTML(prompt.title)}</h3>
             <div class="prompt-card-actions">
+                <button class="copy-btn" title="Copy Prompt">
+                    <i class="fas fa-copy"></i>
+                </button>
                 <button class="edit-btn" title="Edit Prompt">
                     <i class="fas fa-pencil-alt"></i>
                 </button>
