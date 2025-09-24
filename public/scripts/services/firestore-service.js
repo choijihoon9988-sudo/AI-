@@ -1,7 +1,20 @@
 import {
-    collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot,
-    serverTimestamp, runTransaction, getDocs, orderBy, writeBatch, increment
+    collection,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc,
+    query,
+    where,
+    onSnapshot,
+    serverTimestamp,
+    runTransaction,
+    getDocs,
+    orderBy,
+    writeBatch,
+    increment
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-functions.js";
 import { db } from '../firebase-config.js';
 import { getCurrentUser } from '../auth.js';
 
@@ -148,37 +161,21 @@ export const ratePrompt = async (promptId, rating, guildId = null) => {
 };
 
 /**
- * AI 모델을 통해 프롬프트 개선 제안을 요청합니다. (시뮬레이션)
+ * AI 모델을 통해 프롬프트 개선 제안을 요청합니다. (실제 Cloud Function 호출)
  * @param {string} originalPrompt - 사용자가 입력한 원본 프롬프트
  * @returns {Promise<string>} AI가 제안하는 개선된 프롬프트
  */
 export const getAISuggestion = async (originalPrompt) => {
-    console.log("AI suggestion requested for:", originalPrompt);
-    // 중요: 실제 프로덕션 환경에서는 이 로직을 반드시 Firebase Cloud Function으로 이전해야 합니다.
-    // 클라이언트에서 API 키를 노출하는 것은 매우 위험합니다.
-
-    const metaPrompt = `
-        You are an expert prompt engineer. Your task is to refine the user's prompt to make it more effective for a large language model like GPT-4 or Gemini.
-        **COSTAR Framework:**
-        * **[C]ontext:** The user wants to generate a specific output but their prompt might be vague, ambiguous, or lack necessary details.
-        * **[O]bjective:** Rewrite the following user prompt. The new prompt should be clearer, more specific, and provide more context to the AI. It should follow best practices for prompt engineering, such as assigning a role, providing examples (if applicable), and specifying the desired output format.
-        * **[S]tyle:** The rewritten prompt should be concise and direct.
-        * **[T]one:** Professional and instructional.
-        * **[A]udience:** The audience for the rewritten prompt is an advanced AI model.
-        * **[R]esponse:** Provide ONLY the rewritten prompt text, without any explanations or conversational filler.
-        
-        **User's Original Prompt:**
-        "${originalPrompt}"
-
-        **Rewritten Prompt:**
-    `;
-
-    console.log("AI에게 전송될 메타 프롬프트:", metaPrompt);
+    const functions = getFunctions();
+    const callGetAISuggestion = httpsCallable(functions, 'getAISuggestion');
     
-    // 여기서는 실제 API 호출 대신 시뮬레이션 응답을 반환합니다.
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 네트워크 지연 시뮬레이션
-
-    return `개선된 프롬프트 예시입니다: 원본 프롬프트의 핵심 의도를 파악하여, AI가 더 명확하게 이해할 수 있도록 역할 부여, 구체적인 지시사항, 출력 형식 등을 포함하여 재구성했습니다. 이 부분은 실제로는 Cloud Function에서 Gemini API를 호출한 후 반환되어야 합니다.`;
+    try {
+        const result = await callGetAISuggestion({ prompt: originalPrompt });
+        return result.data.suggestion;
+    } catch (error) {
+        console.error("Cloud Function 호출 에러:", error);
+        throw new Error("AI로부터 제안을 받아오는 데 실패했습니다.");
+    }
 };
 
 
