@@ -3,12 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // prompts 컬렉션에 대한 규칙
     match /prompts/{promptId} {
-      // 사용자는 자신의 프롬프트만 읽고, 수정하고, 삭제할 수 있습니다.
-      // 문서는 반드시 'userId' 필드를 가져야 하며, 그 값은 요청자의 uid와 같아야 합니다.
+      // 사용자는 자신의 프롬프트만 읽고, 수정하고, 삭제할 수 있어.
       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
 
-      // 사용자는 자신의 프롬프트를 생성할 수 있습니다.
-      // 생성되는 문서의 'userId'는 반드시 요청자의 uid와 같아야 합니다.
+      // 사용자는 자신의 프롬프트를 생성할 수 있어.
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }

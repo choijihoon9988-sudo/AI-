@@ -1,13 +1,13 @@
 const toastConfig = {
-    duration: 3000,
-    gravity: "top", // `top` or `bottom`
-    position: "right", // `left`, `center` or `right`
-    stopOnFocus: true, // Prevents dismissing of toast on hover
+    duration: 3000, // 3초 동안 보여줘
+    gravity: "top", // 화면 위에 나와
+    position: "right", // 오른쪽에 나와
+    stopOnFocus: true, // 마우스를 올리면 사라지지 않아
 };
 
 /**
- * 성공 메시지 토스트를 표시합니다.
- * @param {string} message - 표시할 메시지
+ * 성공 메시지 토스트를 보여줘.
+ * @param {string} message - 보여줄 메시지 내용
  */
 function success(message) {
     Toastify({
@@ -20,8 +20,8 @@ function success(message) {
 }
 
 /**
- * 오류 메시지 토스트를 표시합니다.
- * @param {string} message - 표시할 메시지
+ * 오류 메시지 토스트를 보여줘.
+ * @param {string} message - 보여줄 메시지 내용
  */
 function error(message) {
     Toastify({
@@ -33,6 +33,7 @@ function error(message) {
     }).showToast();
 }
 
+// 다른 파일에서 toast.success("메시지") 형태로 쉽게 쓸 수 있도록 내보내기
 export const toast = {
     success,
     error,
