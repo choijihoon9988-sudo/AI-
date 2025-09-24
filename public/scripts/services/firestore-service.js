@@ -1,18 +1,6 @@
 import {
-    collection,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    doc,
-    query,
-    where,
-    onSnapshot,
-    serverTimestamp,
-    runTransaction,
-    getDocs,
-    orderBy,
-    writeBatch,
-    increment
+    collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot,
+    serverTimestamp, runTransaction, getDocs, orderBy, writeBatch, increment,
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-functions.js";
 import { db } from '../firebase-config.js';
@@ -36,7 +24,6 @@ export const updateGuildMembers = async (guildId, members, memberIds) => {
     const guildRef = doc(db, GUILDS_COLLECTION, guildId);
     await updateDoc(guildRef, { members, memberIds });
 };
-
 
 export const onPromptsUpdate = (callback) => {
     const user = getCurrentUser();
@@ -62,7 +49,7 @@ export const addPrompt = async (promptData, guildId = null) => {
         updatedAt: serverTimestamp(),
         use_count: 0,
         avg_rating: 0,
-        ratings: {}
+        ratings: {},
     };
 
     if (guildId) {
@@ -91,7 +78,7 @@ export const updatePrompt = async (promptId, updatedData, guildId = null) => {
                     title: oldData.title,
                     content: oldData.content,
                     category: oldData.category || '',
-                    savedAt: oldData.updatedAt || oldData.createdAt
+                    savedAt: oldData.updatedAt || oldData.createdAt,
                 };
                 const versionDocRef = doc(collection(promptDocRef, VERSIONS_SUBCOLLECTION));
                 transaction.set(versionDocRef, versionData);
@@ -155,16 +142,11 @@ export const ratePrompt = async (promptId, rating, guildId = null) => {
 
         transaction.update(promptDocRef, {
             ratings: newRatings,
-            avg_rating: newAvgRating
+            avg_rating: newAvgRating,
         });
     });
 };
 
-/**
- * AI 모델을 통해 프롬프트 개선 제안을 요청합니다. (실제 Cloud Function 호출)
- * @param {string} originalPrompt - 사용자가 입력한 원본 프롬프트
- * @returns {Promise<string>} AI가 제안하는 개선된 프롬프트
- */
 export const getAISuggestion = async (originalPrompt) => {
     const functions = getFunctions();
     const callGetAISuggestion = httpsCallable(functions, 'getAISuggestion');
@@ -178,7 +160,6 @@ export const getAISuggestion = async (originalPrompt) => {
     }
 };
 
-
 // --- 길드 관련 함수 ---
 
 export const createGuild = async (guildName) => {
@@ -188,9 +169,9 @@ export const createGuild = async (guildName) => {
         name: guildName,
         createdAt: serverTimestamp(),
         members: {
-            [user.uid]: 'owner'
+            [user.uid]: 'owner',
         },
-        memberIds: [user.uid]
+        memberIds: [user.uid],
     });
 };
 
@@ -201,7 +182,7 @@ export const deleteGuild = async (guildId) => {
     const batch = writeBatch(db);
 
     const promptsSnapshot = await getDocs(promptsRef);
-    promptsSnapshot.forEach(promptDoc => {
+    promptsSnapshot.forEach((promptDoc) => {
         batch.delete(promptDoc.ref);
     });
 
