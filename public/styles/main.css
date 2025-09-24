@@ -146,11 +146,17 @@ body {
     border-radius: 8px;
     padding: 1rem;
     font-family: "SF Mono", "Fira Code", monospace;
-    white-space: pre-wrap;
-    word-break: break-word;
     font-size: 0.9rem;
     color: var(--text-primary);
     flex-grow: 1;
+    overflow: hidden; /* 내부 컨텐츠가 넘치는 것을 방지 */
+}
+
+/* ✨ 이 부분을 추가하여 줄바꿈 문제를 해결합니다. ✨ */
+.prompt-card-content pre {
+    white-space: pre-wrap; /* 공백은 유지하되, 필요시 줄바꿈 */
+    word-break: break-all;   /* 긴 단어나 URL이 있을 경우 강제 줄바꿈 */
+    margin: 0;               /* <pre> 태그의 불필요한 기본 마진 제거 */
 }
 
 /* --- 빈 상태 메시지 --- */
@@ -217,7 +223,7 @@ body {
     border-radius: 8px;
 }
 
-/* --- Modal Styles (수정) --- */
+/* --- Modal Styles --- */
 .modal-overlay {
     position: fixed;
     top: 0;
