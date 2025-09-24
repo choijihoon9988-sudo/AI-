@@ -449,6 +449,9 @@ body {
 }
 
 /* --- 길드 관리 모달 스타일 --- */
+.modal-footer {
+    justify-content: space-between;
+}
 .invite-form {
     display: flex;
     gap: 0.5rem;
