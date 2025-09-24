@@ -1,7 +1,7 @@
 import { onAuthStateChangedListener, signInWithGoogle, signOutUser, getCurrentUser } from './auth.js';
 import { 
     onPromptsUpdate, addPrompt, updatePrompt, deletePrompt, getPromptVersions, 
-    createGuild, onGuildsUpdate, onGuildPromptsUpdate 
+    createGuild, onGuildsUpdate, onGuildPromptsUpdate, deleteGuild
 } from './services/firestore-service.js';
 import { createPromptCard } from './components/PromptCard.js';
 import { openModal } from './components/PromptModal.js';
@@ -23,7 +23,7 @@ const mainHeaderTitle = document.querySelector('.main-header-title');
 // --- 애플리케이션 상태 관리 ---
 let allPrompts = [];
 let userGuilds = [];
-let activeView = { type: 'personal', id: null, name: 'My Prompts' };
+let activeView = { type: 'personal', id: null, name: '내 프롬프트' };
 let activeCategory = 'All';
 let unsubscribeFromPrompts = null;
 let unsubscribeFromGuilds = null;
@@ -45,14 +45,14 @@ function renderUserProfile(user) {
         userProfileContainer.innerHTML = `
             <img src="${user.photoURL}" alt="${user.displayName}" referrerpolicy="no-referrer">
             <p>${user.displayName}</p>
-            <button id="sign-out-btn" class="p-btn">Sign Out</button>
+            <button id="sign-out-btn" class="p-btn">로그아웃</button>
         `;
         document.getElementById('sign-out-btn').addEventListener('click', signOutUser);
         newPromptButton.style.display = 'flex';
     } else {
         userProfileContainer.innerHTML = `
-            <p>Please sign in to manage your prompts.</p>
-            <button id="sign-in-btn" class="p-btn p-btn-primary">Sign in with Google</button>
+            <p>프롬프트를 관리하려면 로그인하세요.</p>
+            <button id="sign-in-btn" class="p-btn p-btn-primary">Google 계정으로 로그인</button>
         `;
         document.getElementById('sign-in-btn').addEventListener('click', signInWithGoogle);
         newPromptButton.style.display = 'none';
@@ -98,7 +98,7 @@ function renderCategories() {
 function renderGuilds() {
     if (guildList) {
         if (userGuilds.length === 0) {
-            guildList.innerHTML = `<span class="empty-guild-list">No guilds yet.</span>`;
+            guildList.innerHTML = `<span class="empty-guild-list">아직 길드가 없습니다.</span>`;
             return;
         }
         guildList.innerHTML = userGuilds.map(guild => {
@@ -109,7 +109,7 @@ function renderGuilds() {
                     <button class="guild-btn ${activeView.type === 'guild' && activeView.id === guild.id ? 'active' : ''}" data-guild-id="${guild.id}" data-guild-name="${guild.name}">
                         ${guild.name}
                     </button>
-                    ${isOwner ? `<button class="btn-icon manage-guild-btn" data-guild-id="${guild.id}" title="Manage Guild"><i class="fas fa-cog"></i></button>` : ''}
+                    ${isOwner ? `<button class="btn-icon manage-guild-btn" data-guild-id="${guild.id}" title="길드 관리"><i class="fas fa-cog"></i></button>` : ''}
                 </div>
             `;
         }).join('');
@@ -118,21 +118,22 @@ function renderGuilds() {
 
 
 // --- 핵심 로직 ---
-function updateActiveView(type, id = null, name = 'My Prompts') {
+function updateActiveView(type, id = null, name = '내 프롬프트') {
     activeView = { type, id, name };
     mainHeaderTitle.textContent = name;
-
+    
     document.querySelectorAll('.guild-btn').forEach(btn => btn.classList.remove('active'));
-
-    if (type === 'guild') {
+    
+    if (type === 'guild' && id) {
         const guildBtn = document.querySelector(`.guild-btn[data-guild-id="${id}"]`);
         if (guildBtn) guildBtn.classList.add('active');
     } else {
+        // 개인 뷰로 전환 시 'All' 카테고리 활성화
         const allCategoryBtn = document.querySelector('.category-btn[data-category="All"]');
         if (allCategoryBtn) allCategoryBtn.classList.add('active');
     }
-    activeCategory = 'All'; 
     
+    activeCategory = 'All'; 
     if (unsubscribeFromPrompts) unsubscribeFromPrompts();
 
     const dataUpdateCallback = (prompts) => {
@@ -147,6 +148,7 @@ function updateActiveView(type, id = null, name = 'My Prompts') {
         unsubscribeFromPrompts = onGuildPromptsUpdate(id, dataUpdateCallback);
     }
 }
+
 
 function filterAndRenderPrompts() {
     const searchTerm = searchInput.value.toLowerCase().trim();
@@ -247,9 +249,9 @@ async function handleCreateGuild() {
     if (guildName) {
         try {
             await createGuild(guildName);
-            toast.success(`Guild "${guildName}" created successfully!`);
+            toast.success(`길드 "${guildName}"가 성공적으로 생성되었습니다!`);
         } catch (error) {
-            toast.error('Failed to create guild.');
+            toast.error('길드 생성에 실패했습니다.');
             console.error(error);
         }
     }
@@ -264,8 +266,11 @@ async function handleGuildListClick(event) {
     if (button.classList.contains('manage-guild-btn')) {
         const guild = userGuilds.find(g => g.id === guildId);
         if (guild) {
-            await openGuildManageModal(guild);
-            // After modal closes, the onGuildsUpdate listener will automatically re-render the list if needed.
+            const guildDeleted = await openGuildManageModal(guild);
+            if (guildDeleted) {
+                // 길드가 삭제되면 개인 뷰로 전환
+                switchToPersonalView();
+            }
         }
     } else if (button.classList.contains('guild-btn')) {
         const guildName = button.dataset.guildName;
@@ -274,7 +279,7 @@ async function handleGuildListClick(event) {
 }
 
 function switchToPersonalView() {
-    updateActiveView('personal', null, 'My Prompts');
+    updateActiveView('personal', null, '내 프롬프트');
 }
 
 // --- 애플리케이션 초기화 ---
@@ -296,7 +301,7 @@ function initializeApp() {
         if (unsubscribeFromGuilds) unsubscribeFromGuilds();
 
         if (user) {
-            updateActiveView('personal', null, 'My Prompts');
+            updateActiveView('personal', null, '내 프롬프트');
             unsubscribeFromGuilds = onGuildsUpdate((guilds) => {
                 userGuilds = guilds || [];
                 renderGuilds();

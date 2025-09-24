@@ -32,17 +32,17 @@ export function createPromptCard(prompt, userRole = 'owner') {
             <div class="prompt-card-header">
                 <h3>${escapeHTML(prompt.title)}</h3>
                 <div class="prompt-card-actions">
-                    <button class="btn-icon history-btn" title="Version History">
+                    <button class="btn-icon history-btn" title="버전 기록">
                         <i class="fas fa-history"></i>
                     </button>
-                    <button class="btn-icon copy-btn" title="Copy Prompt">
+                    <button class="btn-icon copy-btn" title="프롬프트 복사">
                         <i class="fas fa-copy"></i>
                     </button>
                     ${canEdit ? `
-                    <button class="btn-icon edit-btn" title="Edit Prompt">
+                    <button class="btn-icon edit-btn" title="수정">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon delete-btn" title="Delete Prompt">
+                    <button class="btn-icon delete-btn" title="삭제">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                     ` : ''}

@@ -14,26 +14,26 @@ function createModal() {
         <div class="modal-overlay" id="guild-manage-modal-overlay">
             <div class="modal" id="guild-manage-modal">
                 <div class="modal-header">
-                    <h3 class="modal-title" id="guild-manage-modal-title">Manage Guild</h3>
+                    <h3 class="modal-title" id="guild-manage-modal-title">길드 관리</h3>
                     <button class="modal-close-btn" id="guild-manage-close-btn">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <h4>Invite Member</h4>
+                    <h4>멤버 초대</h4>
                     <form id="invite-member-form" class="invite-form">
-                        <input type="email" id="invite-email-input" placeholder="Enter user's email" required>
+                        <input type="email" id="invite-email-input" placeholder="사용자 이메일 입력" required>
                         <select id="invite-role-select">
-                            <option value="editor">Editor</option>
-                            <option value="viewer">Viewer</option>
+                            <option value="editor">에디터</option>
+                            <option value="viewer">뷰어</option>
                         </select>
-                        <button type="submit" class="p-btn p-btn-primary">Invite</button>
+                        <button type="submit" class="p-btn p-btn-primary">초대</button>
                     </form>
                     <hr>
-                    <h4>Members</h4>
+                    <h4>멤버</h4>
                     <div id="member-list" class="member-list"></div>
                 </div>
                 <div class="modal-footer">
-                    <button class="p-btn p-btn-danger" id="guild-delete-btn">Delete Guild</button>
-                    <button class="p-btn" id="guild-manage-done-btn">Done</button>
+                    <button class="p-btn p-btn-danger" id="guild-delete-btn">길드 삭제</button>
+                    <button class="p-btn" id="guild-manage-done-btn">완료</button>
                 </div>
             </div>
         </div>
@@ -43,7 +43,7 @@ function createModal() {
 
     // Event Listeners
     document.getElementById('guild-manage-close-btn').addEventListener('click', () => closeModal(false));
-    document.getElementById('guild-manage-done-btn').addEventListener('click', () => closeModal(true));
+    document.getElementById('guild-manage-done-btn').addEventListener('click', () => closeModal(false));
     document.getElementById('guild-delete-btn').addEventListener('click', handleDeleteGuild);
     modalElement.addEventListener('click', e => {
         if (e.target.id === 'guild-manage-modal-overlay') closeModal(false);
@@ -63,12 +63,12 @@ function renderMemberList() {
             ${role !== 'owner' ? `
             <div class="member-actions">
                 <select class="role-select" data-uid="${uid}">
-                    <option value="editor" ${role === 'editor' ? 'selected' : ''}>Editor</option>
-                    <option value="viewer" ${role === 'viewer' ? 'selected' : ''}>Viewer</option>
+                    <option value="editor" ${role === 'editor' ? 'selected' : ''}>에디터</option>
+                    <option value="viewer" ${role === 'viewer' ? 'selected' : ''}>뷰어</option>
                 </select>
-                <button class="p-btn p-btn-danger remove-member-btn" data-uid="${uid}">Remove</button>
+                <button class="p-btn p-btn-danger remove-member-btn" data-uid="${uid}">추방</button>
             </div>
-            ` : '<span class="owner-tag">Owner</span>'}
+            ` : '<span class="owner-tag">소유자</span>'}
         </div>
     `).join('');
 }
@@ -86,12 +86,12 @@ async function handleInviteMember(event) {
     try {
         const userToInvite = await getUserByEmail(email);
         if (!userToInvite) {
-            toast.error("User with that email does not exist.");
+            toast.error("해당 이메일을 가진 사용자가 없습니다.");
             return;
         }
 
         if (currentGuild.memberIds.includes(userToInvite.uid)) {
-            toast.error("User is already a member of this guild.");
+            toast.error("이미 길드에 소속된 사용자입니다.");
             return;
         }
 
@@ -105,10 +105,10 @@ async function handleInviteMember(event) {
         
         renderMemberList();
         emailInput.value = '';
-        toast.success("Member invited successfully!");
+        toast.success("멤버를 성공적으로 초대했습니다!");
 
     } catch (error) {
-        toast.error("Failed to invite member.");
+        toast.error("멤버 초대에 실패했습니다.");
         console.error(error);
     }
 }
@@ -119,7 +119,7 @@ async function handleMemberListClick(event) {
     if (!uid) return;
 
     if (target.classList.contains('remove-member-btn')) {
-        if (!confirm("Are you sure you want to remove this member?")) return;
+        if (!confirm("정말로 이 멤버를 추방하시겠습니까?")) return;
 
         const { [uid]: _, ...updatedMembers } = currentGuild.members;
         const updatedMemberIds = currentGuild.memberIds.filter(id => id !== uid);
@@ -129,9 +129,9 @@ async function handleMemberListClick(event) {
             currentGuild.members = updatedMembers;
             currentGuild.memberIds = updatedMemberIds;
             renderMemberList();
-            toast.success("Member removed.");
+            toast.success("멤버를 추방했습니다.");
         } catch (error) {
-            toast.error("Failed to remove member.");
+            toast.error("멤버 추방에 실패했습니다.");
         }
 
     } else if (target.classList.contains('role-select')) {
@@ -141,26 +141,26 @@ async function handleMemberListClick(event) {
         try {
             await updateGuildMembers(currentGuild.id, updatedMembers, currentGuild.memberIds);
             currentGuild.members = updatedMembers;
-            toast.success("Member role updated.");
+            toast.success("멤버 역할을 업데이트했습니다.");
         } catch (error) {
-            toast.error("Failed to update role.");
+            toast.error("역할 업데이트에 실패했습니다.");
         }
     }
 }
 
 async function handleDeleteGuild() {
     const guildName = currentGuild.name;
-    if (prompt(`To confirm, please type the name of the guild to delete: "${guildName}"`) !== guildName) {
-        toast.error("Guild name did not match. Deletion cancelled.");
+    if (prompt(`삭제하려면 길드 이름 "${guildName}"을(를) 정확히 입력하세요:`) !== guildName) {
+        toast.error("길드 이름이 일치하지 않아 삭제가 취소되었습니다.");
         return;
     }
 
     try {
         await deleteGuild(currentGuild.id);
-        toast.success(`Guild "${guildName}" has been deleted.`);
-        closeModal(true);
+        toast.success(`길드 "${guildName}"가 삭제되었습니다.`);
+        closeModal(true); // Indicate that a major change happened
     } catch (error) {
-        toast.error("Failed to delete guild.");
+        toast.error("길드 삭제에 실패했습니다.");
         console.error("Error deleting guild:", error);
     }
 }
@@ -180,8 +180,8 @@ export function openGuildManageModal(guild) {
         createModal();
     }
     
-    currentGuild = JSON.parse(JSON.stringify(guild)); // Deep copy to avoid mutation issues
-    document.getElementById('guild-manage-modal-title').textContent = `Manage "${guild.name}"`;
+    currentGuild = JSON.parse(JSON.stringify(guild)); // Deep copy
+    document.getElementById('guild-manage-modal-title').textContent = `"${guild.name}" 길드 관리`;
     renderMemberList();
 
     modalElement.classList.add('active');

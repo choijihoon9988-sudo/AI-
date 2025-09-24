@@ -13,29 +13,29 @@ function createModal() {
         <div class="modal-overlay" id="prompt-modal-overlay">
             <div class="modal" id="prompt-modal">
                 <div class="modal-header">
-                    <h3 class="modal-title" id="modal-title">New Prompt</h3>
+                    <h3 class="modal-title" id="modal-title">새 프롬프트</h3>
                     <button class="modal-close-btn" id="modal-close-btn">&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="prompt-form">
                         <input type="hidden" id="prompt-id">
                         <div class="form-group">
-                            <label for="prompt-title">Title</label>
-                            <input class="form-control" type="text" id="prompt-title" placeholder="e.g., JavaScript Code Reviewer" required>
+                            <label for="prompt-title">제목</label>
+                            <input class="form-control" type="text" id="prompt-title" placeholder="예: JavaScript 코드 리뷰어" required>
                         </div>
                         <div class="form-group">
-                            <label for="prompt-category">Category (Optional)</label>
-                            <input class="form-control" type="text" id="prompt-category" placeholder="e.g., Development, Marketing...">
+                            <label for="prompt-category">카테고리 (선택 사항)</label>
+                            <input class="form-control" type="text" id="prompt-category" placeholder="예: 개발, 마케팅...">
                         </div>
                         <div class="form-group">
-                            <label for="prompt-content">Content</label>
-                            <textarea class="form-control" id="prompt-content" rows="10" placeholder="Enter your prompt here..." required></textarea>
+                            <label for="prompt-content">내용</label>
+                            <textarea class="form-control" id="prompt-content" rows="10" placeholder="여기에 프롬프트를 입력하세요..." required></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="p-btn" id="modal-cancel-btn" type="button">Cancel</button>
-                    <button class="p-btn p-btn-primary" id="modal-save-btn" type="button">Save</button>
+                    <button class="p-btn" id="modal-cancel-btn" type="button">취소</button>
+                    <button class="p-btn p-btn-primary" id="modal-save-btn" type="button">저장</button>
                 </div>
             </div>
         </div>
@@ -91,14 +91,14 @@ export function openModal(promptData = null) {
 
     if (promptData) {
         // 수정 모드
-        titleEl.textContent = 'Edit Prompt';
+        titleEl.textContent = '프롬프트 수정';
         idEl.value = promptData.id;
         promptTitleEl.value = promptData.title;
         promptCategoryEl.value = promptData.category || '';
         promptContentEl.value = promptData.content;
     } else {
         // 생성 모드
-        titleEl.textContent = 'New Prompt';
+        titleEl.textContent = '새 프롬프트';
         form.reset();
         idEl.value = '';
     }

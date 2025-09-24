@@ -19,7 +19,7 @@ function createVersionHistoryModal() {
         <div class="modal-overlay version-history-modal" id="version-history-modal-overlay">
             <div class="modal" id="version-history-modal">
                 <div class="modal-header">
-                    <h3 class="modal-title">Version History</h3>
+                    <h3 class="modal-title">버전 기록</h3>
                     <button class="modal-close-btn" id="version-history-close-btn">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -27,7 +27,7 @@ function createVersionHistoryModal() {
                         </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="p-btn" id="version-history-cancel-btn">Close</button>
+                    <button class="p-btn" id="version-history-cancel-btn">닫기</button>
                 </div>
             </div>
         </div>
@@ -53,11 +53,10 @@ function createVersionHistoryModal() {
 function renderVersions(versions) {
     const listContainer = document.getElementById('version-history-list');
     if (!versions || versions.length === 0) {
-        listContainer.innerHTML = '<p class="empty-state">No previous versions found.</p>';
+        listContainer.innerHTML = '<p class="empty-state">이전 버전이 없습니다.</p>';
         return;
     }
 
-    // ✨ 오류 수정: savedAt이 없는 경우를 대비하여 안전하게 정렬
     versions.sort((a, b) => {
         const timeA = a.savedAt?.toDate()?.getTime() || 0;
         const timeB = b.savedAt?.toDate()?.getTime() || 0;
@@ -65,16 +64,15 @@ function renderVersions(versions) {
     });
 
     listContainer.innerHTML = versions.map(version => {
-        // ✨ 오류 수정: savedAt이 Timestamp 객체인지 확인 후 toDate() 호출
         const timestamp = (version.savedAt && typeof version.savedAt.toDate === 'function')
             ? version.savedAt.toDate().toLocaleString('ko-KR')
-            : 'Date not available';
+            : '날짜 정보 없음';
         
         return `
             <div class="version-item">
                 <div class="version-meta">
                     <h4>${escapeHTML(version.title)}</h4>
-                    <span>Saved on: ${timestamp}</span>
+                    <span>저장 일시: ${timestamp}</span>
                 </div>
                 <div class="version-content">
                     <pre><code>${escapeHTML(version.content)}</code></pre>
