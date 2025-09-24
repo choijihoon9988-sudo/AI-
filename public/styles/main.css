@@ -217,40 +217,103 @@ body {
     border-radius: 8px;
 }
 
-/* --- Modal Styles --- */
-.p-modal-overlay {
+/* --- Modal Styles (수정) --- */
+.modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: none; /* 평소에는 숨겨 둠 */
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.p-modal-overlay.is-open {
-    display: flex !important; /* is-open 클래스가 붙으면 무조건 보이도록 함 */
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
 }
 
-.p-modal {
+.modal {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     max-width: 600px;
     width: 90%;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
 }
 
-.p-form-group {
-    margin-bottom: 1rem;
+.modal-overlay.active .modal {
+    transform: scale(1);
 }
 
-.p-form-group label {
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: #f9f9f9;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
     display: block;
     margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
 }
 
-.p-form-group input, .p-form-group textarea {
+.form-group .form-control {
+    box-sizing: border-box; /* 너비 계산 문제를 방지하기 위해 추가 */
     width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group .form-control:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
 }
 
 /* --- Custom Button Style to Avoid Conflicts --- */

@@ -1,4 +1,4 @@
-// public/scripts/components/PromptModal.js (최종 완성본)
+// public/scripts/components/PromptModal.js (수정 완료)
 
 let modalElement = null;
 let resolvePromise = null;
@@ -6,27 +6,28 @@ let resolvePromise = null;
 function createModal() {
     if (document.getElementById('prompt-modal-overlay')) return;
 
+    // Puppertino CSS 프레임워크와 호환되는 모달 HTML 구조로 변경
     const modalHTML = `
-        <div class="p-modal-overlay" id="prompt-modal-overlay">
-            <div class="p-modal" id="prompt-modal">
-                <div class="p-modal-header">
-                    <h3 id="modal-title">New Prompt</h3>
-                    <button class="p-modal-close" id="modal-close-btn">&times;</button>
+        <div class="modal-overlay" id="prompt-modal-overlay">
+            <div class="modal" id="prompt-modal">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modal-title">New Prompt</h3>
+                    <button class="modal-close-btn" id="modal-close-btn">&times;</button>
                 </div>
-                <div class="p-modal-content">
+                <div class="modal-body">
                     <form id="prompt-form">
                         <input type="hidden" id="prompt-id">
-                        <div class="p-form-group">
+                        <div class="form-group">
                             <label for="prompt-title">Title</label>
-                            <input type="text" id="prompt-title" placeholder="e.g., JavaScript Code Reviewer" required>
+                            <input class="form-control" type="text" id="prompt-title" placeholder="e.g., JavaScript Code Reviewer" required>
                         </div>
-                        <div class="p-form-group">
+                        <div class="form-group">
                             <label for="prompt-content">Content</label>
-                            <textarea id="prompt-content" rows="10" placeholder="Enter your prompt here..." required></textarea>
+                            <textarea class="form-control" id="prompt-content" rows="10" placeholder="Enter your prompt here..." required></textarea>
                         </div>
                     </form>
                 </div>
-                <div class="p-modal-footer">
+                <div class="modal-footer">
                     <button class="p-btn" id="modal-cancel-btn" type="button">Cancel</button>
                     <button class="p-btn p-btn-primary" id="modal-save-btn" type="button">Save</button>
                 </div>
@@ -36,6 +37,7 @@ function createModal() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     modalElement = document.getElementById('prompt-modal-overlay');
 
+    // 이벤트 리스너 설정
     document.getElementById('modal-close-btn').addEventListener('click', () => closeModal(null));
     document.getElementById('modal-cancel-btn').addEventListener('click', () => closeModal(null));
     modalElement.addEventListener('click', (e) => {
@@ -60,7 +62,8 @@ function createModal() {
 
 function closeModal(data) {
     if (modalElement) {
-        modalElement.classList.remove('is-open');
+        // 'is-open' 대신 'active' 클래스를 사용하여 Puppertino와 호환성 유지
+        modalElement.classList.remove('active');
     }
     if (resolvePromise) {
         resolvePromise(data);
@@ -77,19 +80,21 @@ export function openModal(promptData = null) {
     const titleEl = document.getElementById('modal-title');
     const idEl = document.getElementById('prompt-id');
     const promptTitleEl = document.getElementById('prompt-title');
+    const promptContentEl = document.getElementById('prompt-content');
 
     if (promptData) {
         titleEl.textContent = 'Edit Prompt';
         idEl.value = promptData.id;
         promptTitleEl.value = promptData.title;
-        document.getElementById('prompt-content').value = promptData.content;
+        promptContentEl.value = promptData.content;
     } else {
         titleEl.textContent = 'New Prompt';
         form.reset();
         idEl.value = '';
     }
 
-    modalElement.classList.add('is-open');
+    // 'is-open' 대신 'active' 클래스를 사용하여 모달 표시
+    modalElement.classList.add('active');
     promptTitleEl.focus();
 
     return new Promise((resolve) => {
