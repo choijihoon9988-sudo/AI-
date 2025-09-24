@@ -16,6 +16,7 @@ const userProfileContainer = document.getElementById('user-profile');
 const promptGrid = document.getElementById('prompt-grid');
 const newPromptButton = document.getElementById('new-prompt-btn');
 const searchInput = document.getElementById('search-input');
+const sortSelect = document.getElementById('sort-select');
 const categoryList = document.getElementById('category-list');
 const guildList = document.getElementById('guild-list');
 const createGuildButton = document.getElementById('create-guild-btn');
@@ -26,6 +27,7 @@ let allPrompts = [];
 let userGuilds = [];
 let activeView = { type: 'personal', id: null, name: '내 프롬프트' };
 let activeCategory = 'All';
+let activeSort = 'updatedAt';
 let unsubscribeFromPrompts = null;
 let unsubscribeFromGuilds = null;
 let currentUser = null;
@@ -77,7 +79,6 @@ function renderPrompts(promptsToRender) {
         userRole = 'owner';
     }
 
-    promptsToRender.sort((a, b) => (b.updatedAt?.toDate() || 0) - (a.updatedAt?.toDate() || 0));
     promptsToRender.forEach(prompt => {
         const card = createPromptCard(prompt, userRole, currentUser?.uid);
         promptGrid.appendChild(card);
@@ -151,7 +152,7 @@ function updateActiveView(type, id = null, name = '내 프롬프트') {
 
 function filterAndRenderPrompts() {
     const searchTerm = searchInput.value.toLowerCase().trim();
-    let filteredPrompts = allPrompts;
+    let filteredPrompts = [...allPrompts]; // 원본 배열 수정을 방지하기 위해 복사본 생성
 
     if (activeCategory !== 'All') {
         filteredPrompts = filteredPrompts.filter(p => p.category === activeCategory);
@@ -163,6 +164,20 @@ function filterAndRenderPrompts() {
             (p.content && p.content.toLowerCase().includes(searchTerm))
         );
     }
+
+    // 정렬 로직
+    filteredPrompts.sort((a, b) => {
+        switch (activeSort) {
+            case 'avg_rating':
+                return (b.avg_rating || 0) - (a.avg_rating || 0);
+            case 'use_count':
+                return (b.use_count || 0) - (a.use_count || 0);
+            case 'updatedAt':
+            default:
+                return (b.updatedAt?.toDate() || 0) - (a.updatedAt?.toDate() || 0);
+        }
+    });
+
     renderPrompts(filteredPrompts);
 }
 
@@ -194,7 +209,6 @@ async function handleGridClick(event) {
         try {
             await ratePrompt(promptId, rating, guildId);
             
-            // 즉각적인 UI 피드백
             const starsContainer = target.parentElement;
             const allStars = starsContainer.querySelectorAll('.rating-star');
             allStars.forEach(star => {
@@ -272,6 +286,11 @@ function handleCategoryClick(event) {
     }
 }
 
+function handleSortChange(event) {
+    activeSort = event.target.value;
+    filterAndRenderPrompts();
+}
+
 async function handleCreateGuild() {
     const guildName = await openGuildModal();
     if (guildName) {
@@ -316,6 +335,7 @@ function initializeApp() {
     newPromptButton.addEventListener('click', handleNewPrompt);
     promptGrid.addEventListener('click', handleGridClick);
     searchInput.addEventListener('input', debouncedFilter);
+    sortSelect.addEventListener('change', handleSortChange);
     categoryList.addEventListener('click', handleCategoryClick);
     createGuildButton.addEventListener('click', handleCreateGuild);
     guildList.addEventListener('click', handleGuildListClick);

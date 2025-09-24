@@ -238,8 +238,6 @@ body {
     flex-grow: 1;
 }
 
-/* ... (이하 코드 동일) ... */
-
 .prompt-card {
     background-color: var(--card-bg);
     border-radius: 12px;
