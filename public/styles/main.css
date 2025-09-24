@@ -1,0 +1,41 @@
+/* Apple 디자인 철학을 반영한 버튼 스타일 */
+.apple-style-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid #d2d2d7;
+    background-color: #ffffff;
+    color: #1d1d1f;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.apple-style-button:hover {
+    background-color: #f5f5f7;
+}
+
+.apple-style-button img {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+.hidden {
+    display: none!important;
+}
+
+#user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#user-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
