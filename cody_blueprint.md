@@ -50,10 +50,43 @@
 - [x] 키워드 검색
 - [x] 길드 생성 및 목록 조회
 - [x] 길드/개인 작업 공간 전환
-- [x] **길드 전용 프롬프트 CRUD**
+- [x] 길드 전용 프롬프트 CRUD
 - [ ] 길드 멤버 초대 및 관리
 - [ ] 역할 기반 UI/기능 제한 (수정/삭제 버튼 등)
 - [ ] '프롬프트 인텔리전스' 대시보드
 - [ ] AI 기반 프롬프트 최적화 제안
 
 ## 파일 구조
+
+/
+├── .firebaserc
+├── .gitignore
+├── deploy.bat
+├── firebase.json
+├── firestore.rules
+└── public/
+├── index.html
+├── scripts/
+│   ├── auth.js
+│   ├── firebase-config.js
+│   ├── main.js
+│   ├── components/
+│   │   ├── GuildModal.js
+│   │   ├── PromptCard.js
+│   │   ├── PromptModal.js
+│   │   └── VersionHistoryModal.js
+│   ├── services/
+│   │   └── firestore-service.js
+│   └── utils/
+│       └── toast-service.js
+└── styles/
+└── main.css
+
+
+---
+### 변경 기록 (v.20250925)
+- **`firestore-service.js`**: `updatePrompt`와 `deletePrompt` 함수를 `guildId`를 인자로 받도록 수정하여, 길드 프롬프트와 개인 프롬프트를 모두 처리할 수 있도록 동적으로 경로를 생성하는 로직으로 변경.
+- **`main.js`**:
+    - `handleNewPrompt` 함수에서 `activeView`가 길드일 때 `guildId`를 `addPrompt` 서비스로 전달하도록 수정.
+    - `handleGridClick` 함수에서 `activeView`의 타입을 체크하여, 길드 뷰일 경우 `updatePrompt`와 `deletePrompt` 호출 시 `guildId`를 전달하도록 로직 분기.
+- **`firestore.rules` (v.20250925-fix)**: 개인 프롬프트 조회 권한 오류 수정. 잘못된 문법을 사용하던 `list` 규칙을

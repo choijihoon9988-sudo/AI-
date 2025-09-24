@@ -4,21 +4,18 @@ service cloud.firestore {
 
     // 개인 프롬프트에 대한 규칙
     match /prompts/{promptId} {
-      function isOwner() {
-        return request.auth != null && request.auth.uid == resource.data.userId;
-      }
-
-      // ✨ 최종 버그 수정: 개인 프롬프트 목록(list) 조회 규칙을 다시 명확하게 분리
-      allow get: if isOwner();
-      allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
+      // 이제 이 하나의 read 규칙이 get(단일 읽기)과 list(목록 읽기)를 모두 처리합니다.
+      // 사용자는 자신의 uid와 문서의 userId가 일치하는 프롬프트만 읽을 수 있습니다.
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
       
-      // 쓰기 권한
-      allow update, delete: if isOwner();
+      // 쓰기 권한은 이전과 동일하게 유지됩니다.
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
 
       // 버전 관리 서브컬렉션 규칙
       match /versions/{versionId} {
-        allow read, create: if isOwner();
+        // 상위 문서에 대한 접근 권한이 있으므로, 여기도 read로 통일해주는 것이 좋습니다.
+        allow read, create: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/prompts/$(promptId)).data.userId;
       }
     }
 
@@ -36,7 +33,6 @@ service cloud.firestore {
 
       allow get: if isGuildMember();
       allow list: if request.auth != null && request.query.where.memberIds.hasAny([request.auth.uid]);
-
       allow update, delete: if isGuildOwner();
       allow create: if request.auth != null;
 
