@@ -58,6 +58,41 @@ function createModal() {
             form.reportValidity();
         }
     });
+
+    // Puppertino 모달을 위한 추가 스타일 (JS로 동적 추가)
+    const style = document.createElement('style');
+    style.textContent = `
+    .p-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+    }
+    .p-modal-overlay.is-open {
+            display: flex;
+    }
+    .p-modal {
+            max-width: 600px;
+            width: 90%;
+    }
+    .p-form-group {
+            margin-bottom: 1rem;
+    }
+    .p-form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+    }
+    .p-form-group input, .p-form-group textarea {
+            width: 100%;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 /**

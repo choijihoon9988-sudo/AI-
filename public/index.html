@@ -1,180 +1,37 @@
-/* style.css */
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Stash</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/codedgar/Puppertino@latest/dist/css/newfull.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="stylesheet" href="./styles/main.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h1>Prompt Stash</h1>
+            </div>
+            <div id="user-profile" class="user-profile p-2">
+                </div>
+        </aside>
 
-/* --- 변수 및 기본 설정 --- */
-:root {
-    --sidebar-width: 280px;
-    --header-height: 70px;
-    --background-color: #f6f6f7;
-    --sidebar-bg: #e8e8e8;
-    --card-bg: #ffffff;
-    --border-color: #d1d1d6;
-    --text-primary: #1d1d1f;
-    --text-secondary: #6e6e73;
-    --accent-color: #007aff;
-}
+        <main id="main-content" class="main-content">
+            <header class="main-header">
+                <h2>My Prompts</h2>
+                <button id="new-prompt-btn" class="p-btn">
+                    <i class="fas fa-plus"></i> New Prompt
+                </button>
+            </header>
+            <div id="prompt-grid" class="prompt-grid">
+                </div>
+        </main>
+    </div>
 
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-primary);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-/* --- 앱 레이아웃 (CSS Grid) --- */
-.app-container {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
-    grid-template-rows: 100vh;
-    grid-template-areas: "sidebar main";
-    height: 100vh;
-}
-
-.sidebar {
-    grid-area: sidebar;
-    background-color: var(--sidebar-bg);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-}
-
-.main-content {
-    grid-area: main;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-/* --- 사이드바 스타일 --- */
-.sidebar-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.sidebar-header h1 {
-    font-size: 1.5rem;
-    margin: 0;
-}
-
-.user-profile {
-    margin-top: auto;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1rem;
-}
-
-.user-profile img {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    margin-bottom: 0.5rem;
-}
-
-/* --- 메인 콘텐츠 스타일 --- */
-.main-header {
-    height: var(--header-height);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 2rem;
-    border-bottom: 1px solid var(--border-color);
-    background-color: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.main-header h2 {
-    margin: 0;
-}
-
-.prompt-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-    padding: 2rem;
-    flex-grow: 1;
-}
-
-/* --- 프롬프트 카드 스타일 --- */
-.prompt-card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    transition: box-shadow 0.2s ease-in-out;
-}
-
-.prompt-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.prompt-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
-.prompt-card-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    flex-grow: 1;
-}
-
-.prompt-card-actions button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    padding: 0.25rem;
-    margin-left: 0.5rem;
-}
-.prompt-card-actions button:hover {
-    color: var(--accent-color);
-}
-
-.prompt-card-content {
-    background-color: #f0f0f5;
-    border-radius: 8px;
-    padding: 1rem;
-    font-family: "SF Mono", "Fira Code", monospace;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-    flex-grow: 1;
-}
-
-/* --- 빈 상태 메시지 --- */
-.empty-state {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    color: var(--text-secondary);
-    font-size: 1.2rem;
-}
-
-/* --- 반응형 디자인 --- */
-@media (max-width: 768px) {
-   .app-container {
-        grid-template-columns: 1fr;
-        grid-template-areas: "main";
-    }
-   .sidebar {
-        display: none; /* 모바일에서는 사이드바를 숨깁니다. */
-    }
-   .main-header {
-        padding: 0 1rem;
-    }
-   .prompt-grid {
-        padding: 1rem;
-    }
-}
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script type="module" src="./scripts/main.js"></script>
+</body>
+</html>
