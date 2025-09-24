@@ -1,176 +1,74 @@
-// public/scripts/components/GuildManageModal.js
-
-import { getUserByEmail, updateGuildMembers } from '../services/firestore-service.js';
-import { toast } from '../utils/toast-service.js';
+// public/scripts/components/GuildModal.js
 
 let modalElement = null;
 let resolvePromise = null;
-let currentGuild = null;
 
 function createModal() {
-    if (document.getElementById('guild-manage-modal-overlay')) return;
+    if (document.getElementById('guild-modal-overlay')) return;
 
     const modalHTML = `
-        <div class="modal-overlay" id="guild-manage-modal-overlay">
-            <div class="modal" id="guild-manage-modal">
+        <div class="modal-overlay" id="guild-modal-overlay">
+            <div class="modal" id="guild-modal">
                 <div class="modal-header">
-                    <h3 class="modal-title" id="guild-manage-modal-title">Manage Guild</h3>
-                    <button class="modal-close-btn" id="guild-manage-close-btn">&times;</button>
+                    <h3 class="modal-title">Create New Guild</h3>
+                    <button class="modal-close-btn" id="guild-modal-close-btn">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <h4>Invite Member</h4>
-                    <form id="invite-member-form" class="invite-form">
-                        <input type="email" id="invite-email-input" placeholder="Enter user's email" required>
-                        <select id="invite-role-select">
-                            <option value="editor">Editor</option>
-                            <option value="viewer">Viewer</option>
-                        </select>
-                        <button type="submit" class="p-btn p-btn-primary">Invite</button>
+                    <form id="guild-form">
+                        <div class="form-group">
+                            <label for="guild-name">Guild Name</label>
+                            <input class="form-control" type="text" id="guild-name" placeholder="e.g., Marketing Team" required>
+                        </div>
                     </form>
-                    <hr>
-                    <h4>Members</h4>
-                    <div id="member-list" class="member-list"></div>
                 </div>
                 <div class="modal-footer">
-                    <button class="p-btn" id="guild-manage-done-btn">Done</button>
+                    <button class="p-btn" id="guild-modal-cancel-btn" type="button">Cancel</button>
+                    <button class="p-btn p-btn-primary" id="guild-modal-save-btn" type="button">Create</button>
                 </div>
             </div>
         </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-    modalElement = document.getElementById('guild-manage-modal-overlay');
+    modalElement = document.getElementById('guild-modal-overlay');
 
-    // Event Listeners
-    document.getElementById('guild-manage-close-btn').addEventListener('click', () => closeModal(false));
-    document.getElementById('guild-manage-done-btn').addEventListener('click', () => closeModal(true));
-    modalElement.addEventListener('click', e => {
-        if (e.target.id === 'guild-manage-modal-overlay') closeModal(false);
+    // 이벤트 리스너 설정
+    document.getElementById('guild-modal-close-btn').addEventListener('click', () => closeModal(null));
+    document.getElementById('guild-modal-cancel-btn').addEventListener('click', () => closeModal(null));
+    modalElement.addEventListener('click', (e) => {
+        if (e.target.id === 'guild-modal-overlay') {
+            closeModal(null);
+        }
     });
-
-    document.getElementById('invite-member-form').addEventListener('submit', handleInviteMember);
-    document.getElementById('member-list').addEventListener('click', handleMemberListClick);
+    document.getElementById('guild-modal-save-btn').addEventListener('click', () => {
+        const form = document.getElementById('guild-form');
+        if (form.checkValidity()) {
+            const guildName = document.getElementById('guild-name').value;
+            closeModal(guildName);
+        } else {
+            form.reportValidity();
+        }
+    });
 }
 
-function renderMemberList() {
-    const memberListContainer = document.getElementById('member-list');
-    const members = currentGuild.members || {};
-    
-    memberListContainer.innerHTML = Object.entries(members).map(([uid, role]) => `
-        <div class="member-item" data-uid="${uid}">
-            <span class="member-info">${uid.substring(0, 10)}... (${role})</span>
-            ${role !== 'owner' ? `
-            <div class="member-actions">
-                <select class="role-select" data-current-role="${role}">
-                    <option value="editor" ${role === 'editor' ? 'selected' : ''}>Editor</option>
-                    <option value="viewer" ${role === 'viewer' ? 'selected' : ''}>Viewer</option>
-                </select>
-                <button class="p-btn p-btn-danger remove-member-btn">Remove</button>
-            </div>
-            ` : '<span class="owner-tag">Owner</span>'}
-        </div>
-    `).join('');
-}
-
-
-async function handleInviteMember(event) {
-    event.preventDefault();
-    const emailInput = document.getElementById('invite-email-input');
-    const roleSelect = document.getElementById('invite-role-select');
-    const email = emailInput.value.trim();
-    const role = roleSelect.value;
-
-    if (!email) return;
-
-    try {
-        const userToInvite = await getUserByEmail(email);
-        if (!userToInvite) {
-            toast.error("User with that email does not exist.");
-            return;
-        }
-
-        if (currentGuild.memberIds.includes(userToInvite.uid)) {
-            toast.error("User is already a member of this guild.");
-            return;
-        }
-
-        const updatedMembers = { ...currentGuild.members, [userToInvite.uid]: role };
-        const updatedMemberIds = [...currentGuild.memberIds, userToInvite.uid];
-
-        await updateGuildMembers(currentGuild.id, updatedMembers, updatedMemberIds);
-        
-        currentGuild.members = updatedMembers;
-        currentGuild.memberIds = updatedMemberIds;
-        
-        renderMemberList();
-        emailInput.value = '';
-        toast.success("Member invited successfully!");
-
-    } catch (error) {
-        toast.error("Failed to invite member.");
-        console.error(error);
-    }
-}
-
-async function handleMemberListClick(event) {
-    const target = event.target;
-    const memberItem = target.closest('.member-item');
-    if (!memberItem) return;
-
-    const uid = memberItem.dataset.uid;
-
-    if (target.classList.contains('remove-member-btn')) {
-        if (!confirm("Are you sure you want to remove this member?")) return;
-
-        const { [uid]: _, ...updatedMembers } = currentGuild.members;
-        const updatedMemberIds = currentGuild.memberIds.filter(id => id !== uid);
-
-        try {
-            await updateGuildMembers(currentGuild.id, updatedMembers, updatedMemberIds);
-            currentGuild.members = updatedMembers;
-            currentGuild.memberIds = updatedMemberIds;
-            renderMemberList();
-            toast.success("Member removed.");
-        } catch (error) {
-            toast.error("Failed to remove member.");
-        }
-
-    } else if (target.classList.contains('role-select')) {
-        const newRole = target.value;
-        const updatedMembers = { ...currentGuild.members, [uid]: newRole };
-        
-        // No change to memberIds needed for role update
-        try {
-            await updateGuildMembers(currentGuild.id, updatedMembers, currentGuild.memberIds);
-            currentGuild.members = updatedMembers;
-            // No need to re-render, selection is already updated visually
-            toast.success("Member role updated.");
-        } catch (error) {
-            toast.error("Failed to update role.");
-        }
-    }
-}
-
-
-function closeModal(shouldUpdate) {
+function closeModal(data) {
     if (modalElement) {
         modalElement.classList.remove('active');
     }
     if (resolvePromise) {
-        resolvePromise(shouldUpdate);
+        resolvePromise(data);
         resolvePromise = null;
     }
 }
 
-export function openGuildManageModal(guild) {
+export function openGuildModal() {
     if (!modalElement) {
         createModal();
     }
     
-    currentGuild = guild;
-    document.getElementById('guild-manage-modal-title').textContent = `Manage "${guild.name}"`;
-    renderMemberList();
-
+    document.getElementById('guild-form').reset();
     modalElement.classList.add('active');
+    document.getElementById('guild-name').focus();
+
     return new Promise((resolve) => {
         resolvePromise = resolve;
     });
