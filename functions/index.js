@@ -15,7 +15,8 @@ if (!API_KEY) {
   genAI = new GoogleGenerativeAI(API_KEY);
 }
 
-exports.getAISuggestion = onCall(async (request) => {
+// ✨ 실행 지역을 'asia-northeast3'(서울)으로 명시 ✨
+exports.getAISuggestion = onCall({region: "asia-northeast3"}, async (request) => {
   if (!genAI) {
     throw new HttpsError("failed-precondition", "The function is not initialized correctly due to a missing API key.");
   }

@@ -148,7 +148,8 @@ export const ratePrompt = async (promptId, rating, guildId = null) => {
 };
 
 export const getAISuggestion = async (originalPrompt) => {
-    const functions = getFunctions();
+    // ✨ 함수 호출 지역을 'asia-northeast3'(서울)으로 명시 ✨
+    const functions = getFunctions(undefined, "asia-northeast3");
     const callGetAISuggestion = httpsCallable(functions, 'getAISuggestion');
     
     try {
