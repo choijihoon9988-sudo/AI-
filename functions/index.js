@@ -1,13 +1,42 @@
 const functions = require("firebase-functions");
-const {GoogleGenerativeAI} = require("@google/generative-ai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { defineString } = require("firebase-functions/params");
 
-// .env 대신 Firebase 환경 구성에서 API 키를 안전하게 불러옵니다.
-// 배포 전 반드시 `firebase functions:config:set gemini.key="YOUR_API_KEY"` 명령어를 실행해야 합니다.
-const API_KEY = functions.config().gemini.key;
-const genAI = new GoogleGenerativeAI(API_KEY);
+// Firebase의 최신 파라미터 방식을 사용하여 환경 변수를 선언합니다.
+const geminiKey = defineString("GEMINI_KEY");
+
+let genAI;
+let initializationError = null;
+
+try {
+  const apiKey = geminiKey.value();
+  // ✨ 디버깅용 로그 추가 ✨
+  functions.logger.info("Attempting to initialize GoogleGenerativeAI...");
+  if (apiKey && apiKey.length > 5) {
+    functions.logger.info("GEMINI_KEY loaded successfully.", { keyExists: true });
+    genAI = new GoogleGenerativeAI(apiKey);
+    functions.logger.info("GoogleGenerativeAI initialized successfully.");
+  } else {
+    throw new Error("GEMINI_KEY is missing or invalid.");
+  }
+} catch (error) {
+  // ✨ 초기화 실패 시 에러를 기록합니다. ✨
+  functions.logger.error("Failed to initialize GoogleGenerativeAI:", error);
+  initializationError = error;
+}
+
 
 exports.getAISuggestion = functions.https.onCall(async (data, context) => {
-  // 1. 인증 확인
+  // ✨ 함수 호출 시 초기화 오류가 있었는지 먼저 확인합니다. ✨
+  if (initializationError) {
+    functions.logger.error("Function called but initialization failed previously.", { error: initializationError });
+    throw new functions.https.HttpsError(
+        "failed-precondition",
+        "The function is not initialized correctly due to a configuration error.",
+        initializationError.message,
+    );
+  }
+
   if (!context.auth) {
     throw new functions.https.HttpsError(
         "unauthenticated",
@@ -15,8 +44,7 @@ exports.getAISuggestion = functions.https.onCall(async (data, context) => {
     );
   }
 
-  // 2. prompt 인자 확인
-  const {prompt: originalPrompt} = data;
+  const { prompt: originalPrompt } = data;
   if (!originalPrompt) {
     throw new functions.https.HttpsError(
         "invalid-argument",
@@ -24,7 +52,6 @@ exports.getAISuggestion = functions.https.onCall(async (data, context) => {
     );
   }
 
-  // 3. AI에게 보낼 메타 프롬프트 구성
   const metaPrompt = `
 You are an expert prompt engineer.
 Your task is to refine the user's prompt to make it more effective.
@@ -45,19 +72,18 @@ explanations.
 **Rewritten Prompt:**
   `.trim();
 
-  // 4. Google AI API 호출
   try {
-    const model = genAI.getGenerativeModel({model: "gemini-pro"});
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(metaPrompt);
     const response = await result.response;
     const suggestion = response.text();
-    return {suggestion};
+    return { suggestion };
   } catch (error) {
     console.error("AI API Call Error:", error);
     throw new functions.https.HttpsError(
         "internal",
         "Failed to get suggestion from AI.",
-        error, // 디버깅을 위해 원본 에러를 포함합니다.
+        error,
     );
   }
 });
