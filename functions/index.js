@@ -1,31 +1,32 @@
-const functions = require("firebase-functions");
+// 최신 v5 SDK 스타일로 변경
+const {onCall, HttpsError, logger} = require("firebase-functions/v2/https");
+const {initializeApp} = require("firebase-admin/app");
 const {GoogleGenerativeAI} = require("@google/generative-ai");
 
-// v4 SDK와 호환되는 functions.config()를 사용하여 API 키를 불러옵니다.
-// 이 값은 `firebase functions:config:set gemini.key="..."` 명령어로 설정됩니다.
-const API_KEY = functions.config().gemini.key;
+// .env 파일에 정의된 환경 변수를 사용합니다.
+const API_KEY = process.env.GEMINI_KEY;
 
-// 함수가 처음 시작될 때 API 키가 제대로 로드되었는지 확인합니다.
+initializeApp();
+
+let genAI;
 if (!API_KEY) {
-  console.error("Gemini API Key is not set in functions config. Run 'firebase functions:config:set gemini.key=...'");
+  logger.error("Gemini API Key is not set in .env file.");
+} else {
+  genAI = new GoogleGenerativeAI(API_KEY);
 }
 
-const genAI = new GoogleGenerativeAI(API_KEY);
-
-exports.getAISuggestion = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-        "unauthenticated",
-        "The function must be called while authenticated.",
-    );
+exports.getAISuggestion = onCall(async (request) => {
+  if (!genAI) {
+    throw new HttpsError("failed-precondition", "The function is not initialized correctly due to a missing API key.");
   }
 
-  const {prompt: originalPrompt} = data;
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "The function must be called while authenticated.");
+  }
+
+  const originalPrompt = request.data.prompt;
   if (!originalPrompt) {
-    throw new functions.https.HttpsError(
-        "invalid-argument",
-        "The function must be called with one argument 'prompt'.",
-    );
+    throw new HttpsError("invalid-argument", "The function must be called with one argument 'prompt'.");
   }
 
   const metaPrompt = `
@@ -55,11 +56,7 @@ explanations.
     const suggestion = response.text();
     return {suggestion};
   } catch (error) {
-    console.error("AI API Call Error:", error);
-    throw new functions.https.HttpsError(
-        "internal",
-        "Failed to get suggestion from AI.",
-        error,
-    );
+    logger.error("AI API Call Error:", error);
+    throw new HttpsError("internal", "Failed to get suggestion from AI.", error);
   }
 });
