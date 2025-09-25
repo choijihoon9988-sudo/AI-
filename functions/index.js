@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const {GoogleGenerativeAI} = require("@google/generative-ai");
 
 // v4 SDK와 호환되는 functions.config()를 사용하여 API 키를 불러옵니다.
+// 이 값은 `firebase functions:config:set gemini.key="..."` 명령어로 설정됩니다.
 const API_KEY = functions.config().gemini.key;
 
 // 함수가 처음 시작될 때 API 키가 제대로 로드되었는지 확인합니다.
