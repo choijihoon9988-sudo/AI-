@@ -13,7 +13,9 @@ import { openAIHelperModal } from './components/AIHelperModal.js';
 import { toast } from './utils/toast-service.js';
 
 // --- DOM 요소 참조 ---
-const userProfileContainer = document.getElementById('user-profile');
+const userControlsContainer = document.getElementById('user-controls');
+const userProfileContainer = userControlsContainer.querySelector('#user-profile');
+const themeToggleBtn = userControlsContainer.querySelector('#theme-toggle-btn');
 const promptGrid = document.getElementById('prompt-grid');
 const newPromptButton = document.getElementById('new-prompt-btn');
 const searchInput = document.getElementById('search-input');
@@ -22,6 +24,8 @@ const categoryList = document.getElementById('category-list');
 const guildList = document.getElementById('guild-list');
 const createGuildButton = document.getElementById('create-guild-btn');
 const mainHeaderTitle = document.querySelector('.main-header-title');
+const themeSunIcon = document.getElementById('theme-sun');
+const themeMoonIcon = document.getElementById('theme-moon');
 
 // --- 애플리케이션 상태 관리 ---
 let allPrompts = [];
@@ -42,24 +46,47 @@ function debounce(func, delay) {
     };
 }
 
+// --- 테마 관리 ---
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeSunIcon.style.display = 'inline-block';
+        themeMoonIcon.style.display = 'none';
+    } else {
+        document.body.classList.remove('dark-mode');
+        themeSunIcon.style.display = 'none';
+        themeMoonIcon.style.display = 'inline-block';
+    }
+}
+
+function handleThemeToggle() {
+    const isDarkMode = document.body.classList.toggle('dark-mode');
+    const newTheme = isDarkMode ? 'dark' : 'light';
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+}
+
+
 // --- UI 렌더링 함수 ---
 function renderUserProfile(user) {
     currentUser = user;
-    if (user) {
-        userProfileContainer.innerHTML = `
-            <img src="${user.photoURL}" alt="${user.displayName}" referrerpolicy="no-referrer">
-            <p>${user.displayName}</p>
-            <button id="sign-out-btn" class="p-btn">로그아웃</button>
-        `;
-        document.getElementById('sign-out-btn').addEventListener('click', signOutUser);
-        newPromptButton.style.display = 'flex';
-    } else {
-        userProfileContainer.innerHTML = `
-            <p>프롬프트를 관리하려면 로그인하세요.</p>
-            <button id="sign-in-btn" class="p-btn p-btn-primary">Google 계정으로 로그인</button>
-        `;
-        document.getElementById('sign-in-btn').addEventListener('click', signInWithGoogle);
-        newPromptButton.style.display = 'none';
+    if (userProfileContainer) {
+        if (user) {
+            userProfileContainer.innerHTML = `
+                <img src="${user.photoURL}" alt="${user.displayName}" referrerpolicy="no-referrer">
+                <p>${user.displayName}</p>
+                <button id="sign-out-btn" class="p-btn">로그아웃</button>
+            `;
+            userProfileContainer.querySelector('#sign-out-btn').addEventListener('click', signOutUser);
+            newPromptButton.style.display = 'flex';
+        } else {
+            userProfileContainer.innerHTML = `
+                <p>프롬프트를 관리하려면 로그인하세요.</p>
+                <button id="sign-in-btn" class="p-btn p-btn-primary">Google 계정으로 로그인</button>
+            `;
+            userProfileContainer.querySelector('#sign-in-btn').addEventListener('click', signInWithGoogle);
+            newPromptButton.style.display = 'none';
+        }
     }
 }
 
@@ -343,8 +370,12 @@ function switchToPersonalView() {
 
 // --- 애플리케이션 초기화 ---
 function initializeApp() {
-    const debouncedFilter = debounce(filterAndRenderPrompts, 300);
+    // 1. 테마 초기화
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(savedTheme);
 
+    // 2. 이벤트 리스너 설정
+    const debouncedFilter = debounce(filterAndRenderPrompts, 300);
     newPromptButton.addEventListener('click', handleNewPrompt);
     promptGrid.addEventListener('click', handleGridClick);
     searchInput.addEventListener('input', debouncedFilter);
@@ -353,7 +384,10 @@ function initializeApp() {
     createGuildButton.addEventListener('click', handleCreateGuild);
     guildList.addEventListener('click', handleGuildListClick);
     mainHeaderTitle.addEventListener('click', switchToPersonalView);
+    themeToggleBtn.addEventListener('click', handleThemeToggle);
 
+
+    // 3. 인증 상태 변경 감지
     onAuthStateChangedListener(user => {
         renderUserProfile(user);
         
