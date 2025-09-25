@@ -1,33 +1,32 @@
-// 최신 v5 SDK 스타일로 변경
 const {onCall, HttpsError, logger} = require("firebase-functions/v2/https");
 const {initializeApp} = require("firebase-admin/app");
 const {GoogleGenerativeAI} = require("@google/generative-ai");
 
-// .env 파일에 정의된 환경 변수를 사용합니다.
-const API_KEY = process.env.GEMINI_KEY;
-
+// Admin SDK는 한 번만 초기화합니다.
 initializeApp();
-
-let genAI;
-if (!API_KEY) {
-  logger.error("Gemini API Key is not set in .env file.");
-} else {
-  genAI = new GoogleGenerativeAI(API_KEY);
-}
 
 exports.getAISuggestion = onCall({
   region: "asia-northeast3",
-  // ✨ 메모리를 1GB로 상향 조정 ✨
   memory: "1GB",
 }, async (request) => {
-  if (!genAI) {
-    throw new HttpsError("failed-precondition", "The function is not initialized correctly due to a missing API key.");
+  // --- 함수가 호출될 때 모든 로직을 실행 ---
+
+  // 1. API 키 확인
+  const API_KEY = process.env.GEMINI_KEY;
+  if (!API_KEY) {
+    logger.error("GEMINI_KEY is not set in environment variables.");
+    throw new HttpsError("failed-precondition", "The function is not configured correctly (API key is missing).");
   }
 
+  // 2. AI 클라이언트 초기화
+  const genAI = new GoogleGenerativeAI(API_KEY);
+
+  // 3. 인증 확인
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "The function must be called while authenticated.");
   }
 
+  // 4. 입력값 확인
   const originalPrompt = request.data.prompt;
   if (!originalPrompt) {
     throw new HttpsError("invalid-argument", "The function must be called with one argument 'prompt'.");
