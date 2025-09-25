@@ -7,6 +7,7 @@ const API_KEY = functions.config().gemini.key;
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 exports.getAISuggestion = functions.https.onCall(async (data, context) => {
+  // 1. 인증 확인
   if (!context.auth) {
     throw new functions.https.HttpsError(
         "unauthenticated",
@@ -14,6 +15,7 @@ exports.getAISuggestion = functions.https.onCall(async (data, context) => {
     );
   }
 
+  // 2. prompt 인자 확인
   const {prompt: originalPrompt} = data;
   if (!originalPrompt) {
     throw new functions.https.HttpsError(
@@ -22,6 +24,7 @@ exports.getAISuggestion = functions.https.onCall(async (data, context) => {
     );
   }
 
+  // 3. AI에게 보낼 메타 프롬프트 구성
   const metaPrompt = `
 You are an expert prompt engineer.
 Your task is to refine the user's prompt to make it more effective.
@@ -42,6 +45,7 @@ explanations.
 **Rewritten Prompt:**
   `.trim();
 
+  // 4. Google AI API 호출
   try {
     const model = genAI.getGenerativeModel({model: "gemini-pro"});
     const result = await model.generateContent(metaPrompt);
@@ -53,7 +57,7 @@ explanations.
     throw new functions.https.HttpsError(
         "internal",
         "Failed to get suggestion from AI.",
-        error, // 디버깅을 위해 원본 에러를 포함할 수 있습니다.
+        error, // 디버깅을 위해 원본 에러를 포함합니다.
     );
   }
 });
