@@ -1,9 +1,9 @@
 const functions = require("firebase-functions");
 const {GoogleGenerativeAI} = require("@google/generative-ai");
-require("dotenv").config();
 
-// API 키를 .env 파일에서 안전하게 불러옵니다.
-const API_KEY = process.env.GEMINI_KEY;
+// .env 대신 Firebase 환경 구성에서 API 키를 안전하게 불러옵니다.
+// 배포 전 반드시 `firebase functions:config:set gemini.key="YOUR_API_KEY"` 명령어를 실행해야 합니다.
+const API_KEY = functions.config().gemini.key;
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 exports.getAISuggestion = functions.https.onCall(async (data, context) => {
@@ -53,6 +53,7 @@ explanations.
     throw new functions.https.HttpsError(
         "internal",
         "Failed to get suggestion from AI.",
+        error, // 디버깅을 위해 원본 에러를 포함할 수 있습니다.
     );
   }
 });
