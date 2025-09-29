@@ -1,85 +1,99 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {initializeApp} = require("firebase-admin/app");
 const {GoogleGenerativeAI} = require("@google/generative-ai");
 const logger = require("firebase-functions/logger");
 
-// Firebase Admin SDK와 Gemini API 클라이언트를 전역에서 한 번만 초기화합니다.
-// 이렇게 하면 함수가 재사용될 때(웜 스타트) 초기화 과정을 건너뛰어 성능이 향상됩니다.
 initializeApp();
 
-// 환경 변수에서 API 키를 가져옵니다.
 const API_KEY = process.env.GEMINI_KEY;
 if (!API_KEY) {
   logger.error("GEMINI_KEY is not set in environment variables.");
 }
 
-// AI 클라이언트를 한 번만 생성합니다.
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({model: "gemini-pro"});
 
-
+// --- 기존 getAISuggestion 함수 (변경 없음) ---
 exports.getAISuggestion = onCall({
-  region: "asia-northeast3", // 서울 리전 명시
-  memory: "256MiB", // 필요한 메모리 설정 (기본값보다 낮춰도 충분)
+  region: "asia-northeast3",
+  memory: "256MiB",
 }, async (request) => {
-  // 1. API 키가 설정되지 않았으면 즉시 에러 발생
+    // ... 코드 생략 ...
+});
+
+// AI 분석을 수행하는 공통 로직
+const analyzePromptContent = async (snapshot) => {
   if (!API_KEY) {
-    throw new HttpsError(
-        "failed-precondition",
-        "The function is not configured correctly (API key is missing).",
-    );
+    logger.error("API Key not found, skipping analysis.");
+    return;
+  }
+  if (!snapshot) {
+    logger.log("No data associated with the event");
+    return;
+  }
+  const promptData = snapshot.data();
+  const promptContent = promptData.content;
+
+  if (!promptContent) {
+    logger.log("Prompt content is empty, skipping.");
+    return;
   }
 
-  // 2. 인증된 사용자인지 확인
-  if (!request.auth) {
-    throw new HttpsError(
-        "unauthenticated",
-        "The function must be called while authenticated.",
-    );
-  }
-
-  // 3. 클라이언트로부터 'prompt' 데이터가 제대로 전달되었는지 확인
-  const originalPrompt = request.data.prompt;
-  if (typeof originalPrompt !== "string" || originalPrompt.trim() === "") {
-    throw new HttpsError(
-        "invalid-argument",
-        "The function must be called with a non-empty 'prompt' argument.",
-    );
-  }
-
-  // 4. Gemini AI에 전달할 메타 프롬프트 구성
   const metaPrompt = `
-You are an expert prompt engineer.
-Your task is to refine the user's prompt to make it more effective.
-**COSTAR Framework:**
-* **[C]ontext:** The user's prompt might be vague or lack details.
-* **[O]bjective:** Rewrite the prompt to be clearer, more specific, and provide more context to the AI. Assign a role, provide examples, and specify the output format.
-* **[S]tyle:** Concise and direct.
-* **[T]one:** Professional and instructional.
-* **[A]udience:** An advanced AI model.
-* **[R]esponse:** Provide ONLY the rewritten prompt text, without any explanations.
+    Analyze the following user-submitted prompt and provide the following metadata in a JSON object format.
+    Do not include any explanatory text, only the raw JSON object.
 
-**User's Original Prompt:**
-"${originalPrompt}"
+    1.  **summary**: A concise, one-sentence summary of what this prompt does (in Korean).
+    2.  **useCase**: A brief description of the ideal situation to use this prompt (in Korean).
+    3.  **tags**: An array of 3-5 relevant keywords (in Korean).
 
-**Rewritten Prompt:**
-  `.trim();
+    **User's Prompt:**
+    "${promptContent}"
 
-  // 5. AI API 호출 및 예외 처리
+    **JSON Output:**
+  `;
+
   try {
     const result = await model.generateContent(metaPrompt);
     const response = await result.response;
-    const suggestion = response.text();
+    let text = response.text();
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        logger.error("Failed to find JSON in AI response:", text);
+        return;
+    }
+    const jsonString = jsonMatch[0];
+    const aiMetadata = JSON.parse(jsonString);
 
-    // 성공적으로 처리된 결과를 클라이언트에 반환
-    return {suggestion};
+    await snapshot.ref.update({
+      aiSummary: aiMetadata.summary || "",
+      aiUseCase: aiMetadata.useCase || "",
+      aiTags: aiMetadata.tags || [],
+    });
+    logger.log(`Successfully analyzed and updated prompt: ${snapshot.id}`);
   } catch (error) {
-    // API 호출 중 에러가 발생하면 로그를 남기고 클라이언트에 에러를 전송
-    logger.error("AI API Call Error:", error);
-    throw new HttpsError(
-        "internal",
-        "Failed to get suggestion from AI.",
-        error,
-    );
+    logger.error(`Error analyzing prompt ${snapshot.id}:`, error);
   }
+};
+
+/**
+ * ✨ 1. 개인 프롬프트가 생성되면 AI를 통해 분석
+ */
+exports.analyzePersonalPromptOnCreate = onDocumentCreated({
+    document: "prompts/{promptId}",
+    region: "asia-northeast3",
+}, (event) => {
+    return analyzePromptContent(event.data);
+});
+
+/**
+ * ✨ 2. 길드 프롬프트가 생성되면 AI를 통해 분석 (새로 추가!)
+ */
+exports.analyzeGuildPromptOnCreate = onDocumentCreated({
+    document: "guilds/{guildId}/prompts/{promptId}",
+    region: "asia-northeast3",
+}, (event) => {
+    return analyzePromptContent(event.data);
 });

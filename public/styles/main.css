@@ -333,11 +333,10 @@ body {
     padding: 0.75rem 1.5rem;
     border-top: 1px solid var(--border-color);
     background-color: #fafafa;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.5rem 1rem;
 }
 
 .prompt-stats {
@@ -363,6 +362,13 @@ body {
     color: var(--star-color);
 }
 
+.tags-container {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
 
 .category-tag {
     display: inline-block;
@@ -372,6 +378,21 @@ body {
     border-radius: 12px;
     font-size: 0.8rem;
     font-weight: 500;
+}
+
+.ai-summary {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+    padding: 0.5rem 1rem;
+    background-color: #f0f0f5;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-color);
+}
+
+.ai-tag {
+    background-color: #eef5e9;
+    color: #3e7c17;
 }
 
 .empty-state {

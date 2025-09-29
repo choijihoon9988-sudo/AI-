@@ -38,15 +38,17 @@ export function createPromptCard(prompt, userRole = 'owner', currentUserId) {
     const categoryTag = prompt.category 
         ? `<div class="category-tag">${escapeHTML(prompt.category)}</div>` 
         : '';
+        
+    // AI가 생성한 태그들을 표시하는 HTML 생성
+    const aiTagsHTML = (prompt.aiTags && prompt.aiTags.length > 0)
+        ? prompt.aiTags.map(tag => `<div class="category-tag ai-tag">${escapeHTML(tag)}</div>`).join('')
+        : '';
 
     card.innerHTML = `
         <div class="prompt-card-main">
             <div class="prompt-card-header">
                 <h3>${escapeHTML(prompt.title)}</h3>
                 <div class="prompt-card-actions">
-                    <button class="btn-icon ai-helper-btn" title="AI로 개선하기">
-                        <i class="fas fa-magic"></i>
-                    </button>
                     <button class="btn-icon history-btn" title="버전 기록">
                         <i class="fas fa-history"></i>
                     </button>
@@ -63,6 +65,7 @@ export function createPromptCard(prompt, userRole = 'owner', currentUserId) {
                     ` : ''}
                 </div>
             </div>
+            ${prompt.aiSummary ? `<p class="ai-summary">${escapeHTML(prompt.aiSummary)}</p>` : ''}
             <div class="prompt-card-content">
                 <pre><code>${escapeHTML(prompt.content)}</code></pre>
             </div>
@@ -73,7 +76,10 @@ export function createPromptCard(prompt, userRole = 'owner', currentUserId) {
                 <span><i class="fas fa-star"></i> ${avgRatingText}</span>
             </div>
             <div class="rating-stars">${starsHTML}</div>
-            ${categoryTag}
+            <div class="tags-container">
+                ${categoryTag}
+                ${aiTagsHTML}
+            </div>
         </div>
     `;
 
