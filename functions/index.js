@@ -14,27 +14,12 @@ if (!API_KEY) {
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({model: "gemini-pro"});
 
-// --- 기존 getAISuggestion 함수 (변경 없음) ---
-exports.getAISuggestion = onCall({
-  region: "asia-northeast3",
-  memory: "256MiB",
-}, async (request) => {
-    // ... 코드 생략 ...
-});
-
-// AI 분석을 수행하는 공통 로직
-const analyzePromptContent = async (snapshot) => {
+// AI 분석을 수행하는 공통 로직 (✨ 상세 로그 추가 ✨)
+const analyzePromptContent = async (promptContent, snapshotRef) => {
   if (!API_KEY) {
     logger.error("API Key not found, skipping analysis.");
     return;
   }
-  if (!snapshot) {
-    logger.log("No data associated with the event");
-    return;
-  }
-  const promptData = snapshot.data();
-  const promptContent = promptData.content;
-
   if (!promptContent) {
     logger.log("Prompt content is empty, skipping.");
     return;
@@ -55,10 +40,16 @@ const analyzePromptContent = async (snapshot) => {
   `;
 
   try {
+    // ✨ [로그 1] AI에게 보낼 최종 프롬프트를 로그로 남김
+    logger.info("Sending prompt to Gemini:", {metaPrompt});
+
     const result = await model.generateContent(metaPrompt);
     const response = await result.response;
     let text = response.text();
     
+    // ✨ [로그 2] AI에게 받은 원본 답변 전체를 로그로 남김
+    logger.info("Received raw response from Gemini:", {text});
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
         logger.error("Failed to find JSON in AI response:", text);
@@ -67,33 +58,50 @@ const analyzePromptContent = async (snapshot) => {
     const jsonString = jsonMatch[0];
     const aiMetadata = JSON.parse(jsonString);
 
-    await snapshot.ref.update({
-      aiSummary: aiMetadata.summary || "",
-      aiUseCase: aiMetadata.useCase || "",
-      aiTags: aiMetadata.tags || [],
-    });
-    logger.log(`Successfully analyzed and updated prompt: ${snapshot.id}`);
+    if (snapshotRef) { // Firestore 트리거를 통해 호출된 경우에만 DB 업데이트
+        await snapshotRef.update({
+          aiSummary: aiMetadata.summary || "",
+          aiUseCase: aiMetadata.useCase || "",
+          aiTags: aiMetadata.tags || [],
+        });
+        logger.log(`Successfully analyzed and updated prompt: ${snapshotRef.id}`);
+    }
+
+    return aiMetadata; // 분석 결과를 반환하도록 수정
+
   } catch (error) {
-    logger.error(`Error analyzing prompt ${snapshot.id}:`, error);
+    logger.error(`Error during AI analysis:`, error);
+    throw new HttpsError("internal", "AI analysis failed.", error.message);
   }
 };
 
-/**
- * ✨ 1. 개인 프롬프트가 생성되면 AI를 통해 분석
- */
+// Firestore 문서 생성 시 자동으로 호출되는 함수들
 exports.analyzePersonalPromptOnCreate = onDocumentCreated({
     document: "prompts/{promptId}",
     region: "asia-northeast3",
 }, (event) => {
-    return analyzePromptContent(event.data);
+    return analyzePromptContent(event.data.data().content, event.data.ref);
 });
 
-/**
- * ✨ 2. 길드 프롬프트가 생성되면 AI를 통해 분석 (새로 추가!)
- */
 exports.analyzeGuildPromptOnCreate = onDocumentCreated({
     document: "guilds/{guildId}/prompts/{promptId}",
     region: "asia-northeast3",
 }, (event) => {
-    return analyzePromptContent(event.data);
+    return analyzePromptContent(event.data.data().content, event.data.ref);
+});
+
+
+// ✨✨✨ 진단용 테스트 함수 (새로 추가) ✨✨✨
+exports.testAnalyzePrompt = onCall({ region: "asia-northeast3" }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Authentication is required.");
+    }
+    const testContent = request.data.content;
+    if (!testContent) {
+        throw new HttpsError("invalid-argument", "Content is required.");
+    }
+    
+    logger.log("Starting manual analysis test...");
+    // DB 업데이트는 하지 않고, 순수 AI 분석 및 반환만 테스트
+    return await analyzePromptContent(testContent, null);
 });
